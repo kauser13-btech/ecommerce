@@ -1,48 +1,21 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+import axios from 'axios';
 
-export async function fetchAPI(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  const response = await fetch(url, {
+const api = axios.create({
+    baseURL: 'http://localhost:8000/api',
     headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
     },
-    ...options,
-  });
+    withCredentials: true, // Important for Sanctum cookie-based auth if used, or just good practice
+});
 
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.statusText}`);
-  }
+// Add a request interceptor to attach the token
+api.interceptors.request.use((config) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
 
-  return response.json();
-}
-
-export async function getProducts(params = {}) {
-  const queryString = new URLSearchParams(params).toString();
-  return fetchAPI(`/products${queryString ? `?${queryString}` : ''}`);
-}
-
-export async function getProduct(slug) {
-  return fetchAPI(`/products/${slug}`);
-}
-
-export async function getCategories() {
-  return fetchAPI('/categories');
-}
-
-export async function getBrands() {
-  return fetchAPI('/brands');
-}
-
-export async function getFeaturedProducts() {
-  return fetchAPI('/products/featured');
-}
-
-export async function getNewArrivals() {
-  return fetchAPI('/products/new-arrivals');
-}
-
-export async function searchProducts(query) {
-  return fetchAPI(`/products/search?q=${encodeURIComponent(query)}`);
-}
+export default api;

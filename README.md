@@ -1,6 +1,31 @@
 # E-Commerce Application
 
-A full-stack e-commerce application inspired by Apple Gadgets BD, built with Next.js (frontend) and Laravel (backend).
+A full-stack e-commerce application, built with Next.js (frontend) and Laravel (backend).
+
+## Company information
+
+Company name: Appleians  
+Address: 
+TOKVO SQUARE BRANCH
+SHOP: 616,643
+LEVEL: 6, TOKVO SQUARE
+JAPAN GARDEN CITY
+MOHAMMADPUR, DHAKA
+
+BASHUNDHARA BRANCH
+SHOP: 1,2 | 12,13
+LEUEL: 6, BLOCK: D,
+BASHUNDHARA CITY SHOPPING MALL
+PANTHAPATH, DHAKA
+
+Phone: +8801842-430000  
+whatsapp busness: +880 1842-430000
+Email: info@appleians.com
+
+social links:
+Facebook: https://www.facebook.com/appleians
+tiktok: tiktok.com/@appleians
+Instagram: https://www.instagram.com/appleiansbd
 
 ## Features
 
@@ -208,22 +233,6 @@ npm start
 #### Backend
 Configure your web server (Apache/Nginx) to serve the Laravel application.
 
-## Features Implemented
-
-- ✅ Responsive header with search and category menu
-- ✅ Product listing with filters (category, brand, search)
-- ✅ Product detail page with images and specifications
-- ✅ Shopping cart functionality
-- ✅ Featured products section
-- ✅ New arrivals section
-- ✅ Category and brand filtering
-- ✅ Footer with links and contact info
-- ✅ Server-side rendering (SSR)
-- ✅ RESTful API with Laravel
-- ✅ Database migrations
-- ✅ CORS configuration
-
-## Future Enhancements
 
 - User authentication and registration
 - Checkout and payment integration

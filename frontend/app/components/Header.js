@@ -1,11 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -14,129 +25,128 @@ export default function Header() {
     }
   };
 
-  const categories = [
-    { name: 'Mobile Phones', slug: 'mobile-phones' },
-    { name: 'Tablets', slug: 'tablets' },
-    { name: 'Laptops', slug: 'laptops' },
-    { name: 'Smartwatches', slug: 'smartwatches' },
-    { name: 'Earbuds', slug: 'earbuds' },
-    { name: 'Accessories', slug: 'accessories' },
+  const navLinks = [
+    { name: 'Mac', href: '/products?category=mac' },
+    { name: 'iPad', href: '/products?category=ipad' },
+    { name: 'iPhone', href: '/products?category=iphone' },
+    { name: 'Watch', href: '/products?category=watch' },
+    { name: 'AirPods', href: '/products?category=airpods' },
+    { name: 'Accessories', href: '/products?category=accessories' },
   ];
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className="bg-gray-900 text-white text-sm py-2">
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-          <div className="flex gap-4">
-            <span>36 Months EMI</span>
-            <span>Fastest Home Delivery</span>
-            <span>Best Price Deals</span>
-          </div>
-          <div className="flex gap-4">
-            <Link href="/track-order" className="hover:text-gray-300">Track Order</Link>
-            <Link href="/support" className="hover:text-gray-300">Support</Link>
-          </div>
-        </div>
-      </div>
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 h-20' : 'bg-white/50 backdrop-blur-sm h-24'
+        }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 h-full">
+        <div className="flex items-center justify-between h-full">
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 -ml-2 text-gray-700"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
 
-      {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-6">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="text-2xl font-bold text-gray-900">
-              Apple Gadgets
-            </div>
+          <Link href="/" className="flex-shrink-0">
+            <img
+              src="/logo.png"
+              alt="Appleians"
+              className={`w-auto transition-all duration-300 ${isScrolled ? 'h-12' : 'h-16'}`}
+            />
           </Link>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search for products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1 rounded-md hover:bg-blue-700"
+          {/* Navigation - Desktop */}
+          <nav className="hidden md:flex gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="text-sm font-medium text-gray-700 hover:text-black transition-colors"
               >
-                Search
-              </button>
-            </div>
-          </form>
+                {link.name}
+              </Link>
+            ))}
+          </nav>
 
-          {/* Icons */}
+          {/* Actions */}
           <div className="flex items-center gap-4">
-            <Link href="/compare" className="hover:text-blue-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors hidden sm:block">
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            <Link href="/cart" className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </Link>
-            <Link href="/account" className="hover:text-blue-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </Link>
-            <Link href="/cart" className="relative hover:text-blue-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-            </Link>
+
+            {user ? (
+              <div className="relative group hidden sm:block">
+                <button className="text-sm font-medium text-gray-700 hover:text-black">
+                  {user.name}
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block border border-gray-100">
+                  <button
+                    onClick={logout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-black hidden sm:block">
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Navigation Menu */}
-      <nav className="bg-gray-100 border-t">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-8 py-3 overflow-x-auto">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg py-4 px-4 flex flex-col gap-4">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className="text-base font-medium text-gray-700 hover:text-black py-2 border-b border-gray-100 last:border-0"
+              onClick={() => setIsMenuOpen(false)}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              Categories
-            </button>
-            <Link href="/offers" className="text-gray-700 hover:text-blue-600 whitespace-nowrap font-medium">
-              Offers
+              {link.name}
             </Link>
-            <Link href="/pre-order" className="text-gray-700 hover:text-blue-600 whitespace-nowrap font-medium">
-              Pre-order
-            </Link>
-            <Link href="/blog" className="text-gray-700 hover:text-blue-600 whitespace-nowrap font-medium">
-              Blog
-            </Link>
-            <Link href="/brands" className="text-gray-700 hover:text-blue-600 whitespace-nowrap font-medium">
-              Brands
-            </Link>
+          ))}
+          <div className="pt-2 flex flex-col gap-3">
+            {user ? (
+              <button
+                onClick={() => { logout(); setIsMenuOpen(false); }}
+                className="text-left text-base font-medium text-red-600"
+              >
+                Sign out ({user.name})
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="text-base font-medium text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign in
+              </Link>
+            )}
           </div>
-
-          {/* Dropdown Menu */}
-          {isMenuOpen && (
-            <div className="absolute left-0 right-0 bg-white shadow-lg border-t py-4 z-40">
-              <div className="max-w-7xl mx-auto px-4 grid grid-cols-4 gap-6">
-                {categories.map((category) => (
-                  <Link
-                    key={category.slug}
-                    href={`/products?category=${category.slug}`}
-                    className="text-gray-700 hover:text-blue-600 py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </nav>
+      )}
     </header>
   );
 }

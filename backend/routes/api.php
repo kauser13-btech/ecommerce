@@ -7,9 +7,25 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\OrderController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+use App\Http\Controllers\Api\AuthController;
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/admin/login', [AuthController::class, 'adminLogin']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // Admin Routes
+    Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->prefix('admin')->group(function () {
+        Route::get('/dashboard', function () {
+            return response()->json(['message' => 'Welcome to Admin Dashboard']);
+        });
+    });
+});
 
 // Products
 Route::get('/products', [ProductController::class, 'index']);

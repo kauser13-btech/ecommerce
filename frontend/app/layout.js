@@ -2,6 +2,7 @@ import "./globals.css";
 
 import { AuthProvider } from "./context/AuthContext";
 import WhatsAppButton from "./components/WhatsAppButton";
+import AuthModal from './components/AuthModal';
 
 export const metadata = {
   title: "Apple Gadgets - Premium Electronics Store",
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           {children}
           <WhatsAppButton />
+          <AuthModal />
         </AuthProvider>
       </body>
     </html>

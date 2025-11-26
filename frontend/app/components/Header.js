@@ -8,7 +8,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, openLoginModal } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -106,9 +106,12 @@ export default function Header() {
                 </div>
               </div>
             ) : (
-              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-black hidden sm:block">
+              <button
+                onClick={openLoginModal}
+                className="text-sm font-medium text-gray-700 hover:text-black hidden sm:block"
+              >
                 Sign in
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -136,13 +139,12 @@ export default function Header() {
                 Sign out ({user.name})
               </button>
             ) : (
-              <Link
-                href="/login"
-                className="text-base font-medium text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              <button
+                onClick={() => { openLoginModal(); setIsMenuOpen(false); }}
+                className="text-left text-base font-medium text-blue-600"
               >
                 Sign in
-              </Link>
+              </button>
             )}
           </div>
         </div>

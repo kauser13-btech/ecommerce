@@ -9,6 +9,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [authModal, setAuthModal] = useState({ isOpen: false, view: 'login' });
     const router = useRouter();
 
     useEffect(() => {
@@ -30,6 +31,10 @@ export const AuthProvider = ({ children }) => {
         checkUser();
     }, []);
 
+    const openLoginModal = () => setAuthModal({ isOpen: true, view: 'login' });
+    const openRegisterModal = () => setAuthModal({ isOpen: true, view: 'register' });
+    const closeAuthModal = () => setAuthModal({ ...authModal, isOpen: false });
+
     const login = async (email, password) => {
         try {
             const response = await api.post('/login', { email, password });
@@ -37,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
             localStorage.setItem('token', access_token);
             setUser(user);
-            router.push('/');
+            closeAuthModal();
             return { success: true };
         } catch (error) {
             console.error('Login failed', error);
@@ -60,7 +65,7 @@ export const AuthProvider = ({ children }) => {
 
             localStorage.setItem('token', access_token);
             setUser(user);
-            router.push('/');
+            closeAuthModal();
             return { success: true };
         } catch (error) {
             console.error('Registration failed', error);
@@ -80,12 +85,22 @@ export const AuthProvider = ({ children }) => {
         } finally {
             localStorage.removeItem('token');
             setUser(null);
-            router.push('/login');
+            router.push('/');
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{
+            user,
+            login,
+            register,
+            logout,
+            loading,
+            authModal,
+            openLoginModal,
+            openRegisterModal,
+            closeAuthModal
+        }}>
             {children}
         </AuthContext.Provider>
     );

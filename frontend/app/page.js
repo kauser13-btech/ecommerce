@@ -1,7 +1,7 @@
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HeroSection from './components/HeroSection';
-import CategoryGrid from './components/CategoryGrid';
+import ShopByCategories from './components/ShopByCategories';
 import ProductCard from './components/ProductCard';
 
 // Fetch data on server-side
@@ -42,7 +42,7 @@ export default async function Home() {
       <main>
         <HeroSection />
 
-        <CategoryGrid />
+        <ShopByCategories />
 
         {/* New Arrivals Slider Section */}
         <section className="max-w-7xl mx-auto px-4 py-20">

@@ -2,6 +2,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 
+export const dynamic = 'force-dynamic';
+
 async function getProducts(searchParams) {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;

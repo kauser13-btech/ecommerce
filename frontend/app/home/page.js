@@ -4,7 +4,9 @@ import HeroSection from '../components/HeroSection';
 import ShopByCategories from '../components/ShopByCategories';
 import ProductCard from '../components/ProductCard';
 
+
 // Fetch data on server-side
+export const dynamic = 'force-dynamic';
 async function getFeaturedProducts() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {

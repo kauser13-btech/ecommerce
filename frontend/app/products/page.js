@@ -63,7 +63,8 @@ async function getBrands() {
   }
 }
 
-export default async function ProductsPage({ searchParams }) {
+export default async function ProductsPage(props) {
+  const searchParams = await props.searchParams;
   const [products, categories, brands] = await Promise.all([
     getProducts(searchParams),
     getCategories(),

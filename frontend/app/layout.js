@@ -5,7 +5,7 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import AuthModal from './components/AuthModal';
 
 export const metadata = {
-  title: "Apple Gadgets - Premium Electronics Store",
+  title: "Appleians - Premium Electronics Store",
   description: "Shop the latest Apple products, smartphones, tablets, laptops, and accessories with best prices and EMI options",
 };
 

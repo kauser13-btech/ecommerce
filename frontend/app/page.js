@@ -1,95 +1,38 @@
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HeroSection from './components/HeroSection';
-import ShopByCategories from './components/ShopByCategories';
-import ProductCard from './components/ProductCard';
-
-// Fetch data on server-side
-async function getFeaturedProducts() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/featured`, {
-      cache: 'no-store'
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching featured products:', error);
-    return [];
-  }
-}
-
-async function getNewArrivals() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/new-arrivals`, {
-      cache: 'no-store'
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching new arrivals:', error);
-    return [];
-  }
-}
-
-export default async function Home() {
-  const [featuredProducts, newArrivals] = await Promise.all([
-    getFeaturedProducts(),
-    getNewArrivals()
-  ]);
-
-  return (
-    <div className="bg-white min-h-screen">
-      <Header />
-
-      <main>
-        <HeroSection />
-
-        <ShopByCategories />
-
-        {/* New Arrivals Slider Section */}
-        <section className="max-w-7xl mx-auto px-4 py-20">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-semibold text-gray-900">
-              The Latest. <span className="text-gray-500">Take a look at what’s new.</span>
-            </h2>
-            <a href="/products?filter=new" className="text-blue-600 hover:underline font-medium flex items-center gap-1">
-              See all
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {newArrivals.slice(0, 4).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-
-        {/* Featured Section */}
-        <section className="bg-[#F5F5F7] py-20">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-semibold text-gray-900">
-                Featured. <span className="text-gray-500">Top picks for you.</span>
-              </h2>
-              <a href="/products?filter=featured" className="text-blue-600 hover:underline font-medium flex items-center gap-1">
-                See all
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
+export default function Home() {
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white relative overflow-hidden">
+            {/* Background Gradients */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/30 rounded-full blur-[120px] animate-pulse"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/30 rounded-full blur-[120px] animate-pulse delay-1000"></div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {featuredProducts.slice(0, 4).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+
+            {/* Content */}
+            <div className="z-10 text-center px-4 max-w-3xl mx-auto">
+                <div className="mb-8 inline-block">
+                    <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm text-gray-300 backdrop-blur-sm">
+                        Something amazing is in the works
+                    </span>
+                </div>
+
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 drop-shadow-sm">
+                    Coming Soon
+                </h1>
+
+                <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                    We are currently crafting a new experience. <br className="hidden md:block" />
+                    Our site is under construction, but we will be back shortly with something special.
+                </p>
+
+                <div className="mt-12 flex justify-center gap-4">
+                    <div className="h-1 w-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                </div>
             </div>
-          </div>
-        </section>
 
-      </main>
-
-      <Footer />
-    </div>
-  );
+            {/* Footer/Copyright */}
+            <div className="absolute bottom-8 text-gray-500 text-sm z-10">
+                &copy; {new Date().getFullYear()} Appleians. All rights reserved.
+            </div>
+        </div>
+    );
 }

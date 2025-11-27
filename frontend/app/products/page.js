@@ -4,7 +4,7 @@ import ProductCard from '../components/ProductCard';
 
 async function getProducts(searchParams) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const params = new URLSearchParams();
 
     if (searchParams.category) params.append('category', searchParams.category);
@@ -33,7 +33,7 @@ async function getProducts(searchParams) {
 
 async function getCategories() {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(`${apiUrl}/categories`, { cache: 'no-store' });
 
     if (!response.ok) return [];
@@ -48,7 +48,7 @@ async function getCategories() {
 
 async function getBrands() {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(`${apiUrl}/brands`, { cache: 'no-store' });
 
     if (!response.ok) return [];
@@ -102,9 +102,8 @@ export default async function ProductsPage({ searchParams }) {
                   <div className="space-y-2">
                     <a
                       href="/products"
-                      className={`block text-sm hover:text-blue-600 ${
-                        !category ? 'text-blue-600 font-medium' : 'text-gray-700'
-                      }`}
+                      className={`block text-sm hover:text-blue-600 ${!category ? 'text-blue-600 font-medium' : 'text-gray-700'
+                        }`}
                     >
                       All Categories
                     </a>
@@ -112,9 +111,8 @@ export default async function ProductsPage({ searchParams }) {
                       <a
                         key={cat.slug}
                         href={`/products?category=${cat.slug}`}
-                        className={`block text-sm hover:text-blue-600 ${
-                          category === cat.slug ? 'text-blue-600 font-medium' : 'text-gray-700'
-                        }`}
+                        className={`block text-sm hover:text-blue-600 ${category === cat.slug ? 'text-blue-600 font-medium' : 'text-gray-700'
+                          }`}
                       >
                         {cat.icon && <span className="mr-1">{cat.icon}</span>}
                         {cat.name}
@@ -129,9 +127,8 @@ export default async function ProductsPage({ searchParams }) {
                   <div className="space-y-2">
                     <a
                       href="/products"
-                      className={`block text-sm hover:text-blue-600 ${
-                        !brand ? 'text-blue-600 font-medium' : 'text-gray-700'
-                      }`}
+                      className={`block text-sm hover:text-blue-600 ${!brand ? 'text-blue-600 font-medium' : 'text-gray-700'
+                        }`}
                     >
                       All Brands
                     </a>
@@ -139,9 +136,8 @@ export default async function ProductsPage({ searchParams }) {
                       <a
                         key={brandItem.slug}
                         href={`/products?brand=${brandItem.slug}`}
-                        className={`block text-sm hover:text-blue-600 ${
-                          brand === brandItem.slug ? 'text-blue-600 font-medium' : 'text-gray-700'
-                        }`}
+                        className={`block text-sm hover:text-blue-600 ${brand === brandItem.slug ? 'text-blue-600 font-medium' : 'text-gray-700'
+                          }`}
                       >
                         {brandItem.name}
                       </a>
@@ -192,9 +188,9 @@ export default async function ProductsPage({ searchParams }) {
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
                     {search ? `Search Results for "${search}"` :
-                     brand ? brands.find(b => b.slug === brand)?.name || brand.charAt(0).toUpperCase() + brand.slice(1) :
-                     category ? categories.find(c => c.slug === category)?.name || category.replace('-', ' ').toUpperCase() :
-                     'All Products'}
+                      brand ? brands.find(b => b.slug === brand)?.name || brand.charAt(0).toUpperCase() + brand.slice(1) :
+                        category ? categories.find(c => c.slug === category)?.name || category.replace('-', ' ').toUpperCase() :
+                          'All Products'}
                   </h1>
                   <p className="text-sm text-gray-600 mt-1">{products.length} products found</p>
                 </div>

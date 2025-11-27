@@ -27,7 +27,7 @@ export default function ProductDetail({ params }) {
 
     async function fetchProduct() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         console.log('Fetching product from:', `${apiUrl}/products/${slug}`);
 
         const response = await fetch(`${apiUrl}/products/${slug}`);
@@ -157,9 +157,8 @@ export default function ProductDetail({ params }) {
                       <button
                         key={idx}
                         onClick={() => setSelectedImage(idx)}
-                        className={`aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 ${
-                          selectedImage === idx ? 'border-blue-600' : 'border-transparent'
-                        }`}
+                        className={`aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 ${selectedImage === idx ? 'border-blue-600' : 'border-transparent'
+                          }`}
                       >
                         {img ? (
                           <img src={img} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />

@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard';
 // Fetch data on server-side
 async function getFeaturedProducts() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/featured`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {
       cache: 'no-store'
     });
     return await response.json();
@@ -19,7 +19,7 @@ async function getFeaturedProducts() {
 
 async function getNewArrivals() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/products/new-arrivals`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/new-arrivals`, {
       cache: 'no-store'
     });
     return await response.json();

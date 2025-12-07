@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\OrderController;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PromoCodeController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -33,6 +34,13 @@ Route::get('/products/featured', [ProductController::class, 'featured']);
 Route::get('/products/new-arrivals', [ProductController::class, 'newArrivals']);
 Route::get('/products/search', [ProductController::class, 'search']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
+Route::get('/products/{id}/admin', [ProductController::class, 'adminShow']);
+Route::post('/products', [ProductController::class, 'store']);
+Route::put('/products/{id}', [ProductController::class, 'update']);
+Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+
+Route::apiResource('promocodes', PromoCodeController::class);
+Route::post('/promocodes/apply', [PromoCodeController::class, 'apply']);
 
 // Categories
 Route::get('/categories', [CategoryController::class, 'index']);

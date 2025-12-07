@@ -78,6 +78,8 @@ export default function Footer() {
                   {link.name}
                 </a>
               ))}
+              <Link href="/emi-terms" className="hover:text-orange-600 transition-colors">EMI Terms</Link>
+              <Link href="/terms" className="hover:text-orange-600 transition-colors">Terms & Conditions</Link>
               <Link href="/contact-us" className="hover:text-orange-600 transition-colors">Contact Us</Link>
             </div>
           </div>

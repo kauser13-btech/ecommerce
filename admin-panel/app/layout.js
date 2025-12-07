@@ -12,17 +12,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Appleians Admin",
-  description: "Admin panel for Appleians E-commerce",
+  title: "Admin | Appleians",
+  description: "Admin panel for Appleians",
 };
+
+import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );

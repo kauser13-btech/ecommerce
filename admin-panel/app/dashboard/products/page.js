@@ -4,11 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '../../lib/api';
 import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
 export default function ProductsPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -20,20 +27,32 @@ export default function ProductsPage() {
             setProducts(response.data.data || response.data);
         } catch (error) {
             console.error('Error fetching products:', error);
+            toast.error('Failed to load products');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this product?')) return;
+    const confirmDelete = (product) => {
+        setProductToDelete(product);
+        setIsDeleteModalOpen(true);
+    };
 
+    const handleDelete = async () => {
+        if (!productToDelete) return;
+
+        setIsDeleting(true);
         try {
-            await api.delete(`/products/${id}`);
-            setProducts(products.filter(p => p.id !== id));
+            await api.delete(`/products/${productToDelete.id}`);
+            setProducts(products.filter(p => p.id !== productToDelete.id));
+            toast.success('Product deleted successfully');
+            setIsDeleteModalOpen(false);
+            setProductToDelete(null);
         } catch (error) {
             console.error('Error deleting product:', error);
-            alert('Failed to delete product');
+            toast.error('Failed to delete product');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -51,6 +70,18 @@ export default function ProductsPage() {
 
     return (
         <div>
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setProductToDelete(null);
+                }}
+                onConfirm={handleDelete}
+                title="Delete Product"
+                message={`Are you sure you want to delete "${productToDelete?.name}"? This action cannot be undone.`}
+                isLoading={isDeleting}
+            />
+
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Products</h1>
                 <Link
@@ -112,13 +143,19 @@ export default function ProductsPage() {
                                         <div className="flex items-center justify-end gap-2">
                                             <Link
                                                 href={`/dashboard/products/${product.id}`}
-                                                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                title="Edit Product"
                                             >
                                                 <Pencil className="h-4 w-4" />
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(product.id)}
-                                                className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    confirmDelete(product);
+                                                }}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Product"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>

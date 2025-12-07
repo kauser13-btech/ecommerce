@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
-import { DollarSign, ShoppingBag, Users, Package } from 'lucide-react';
+import { ShoppingBag, Package } from 'lucide-react';
 
 export default function DashboardPage() {
     const [stats, setStats] = useState({
-        totalRevenue: 0,
         totalOrders: 0,
         totalProducts: 0,
-        totalCustomers: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -17,10 +15,8 @@ export default function DashboardPage() {
         // Mock data for now, or fetch from API if available
         // async function fetchStats() { ... }
         setStats({
-            totalRevenue: 125000,
             totalOrders: 45,
             totalProducts: 12,
-            totalCustomers: 8,
         });
         setLoading(false);
     }, []);
@@ -44,12 +40,6 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Total Revenue"
-                    value={`৳${stats.totalRevenue.toLocaleString()}`}
-                    icon={DollarSign}
-                    color="bg-green-500"
-                />
-                <StatCard
                     title="Total Orders"
                     value={stats.totalOrders}
                     icon={ShoppingBag}
@@ -60,12 +50,6 @@ export default function DashboardPage() {
                     value={stats.totalProducts}
                     icon={Package}
                     color="bg-purple-500"
-                />
-                <StatCard
-                    title="Total Customers"
-                    value={stats.totalCustomers}
-                    icon={Users}
-                    color="bg-orange-500"
                 />
             </div>
 

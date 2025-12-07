@@ -37,6 +37,7 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
                 <div className="text-center mb-8">
+                    <img src="/logo.png" alt="Appleians" className="h-12 mx-auto mb-4" />
                     <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
                     <p className="text-gray-500 mt-2">Sign in to manage your store</p>
                 </div>

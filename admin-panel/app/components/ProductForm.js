@@ -14,6 +14,7 @@ export default function ProductForm({ initialData, isEdit }) {
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
+        sku: '',
         description: '',
         price: '',
         original_price: '',
@@ -131,6 +132,18 @@ export default function ProductForm({ initialData, isEdit }) {
                         </div>
 
                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                            <input
+                                type="text"
+                                name="sku"
+                                value={formData.sku}
+                                onChange={handleChange}
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                required
+                            />
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <textarea
                                 name="description"
@@ -211,6 +224,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                 value={formData.brand_id}
                                 onChange={handleChange}
                                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                required
                             >
                                 <option value="">Select Brand</option>
                                 {brands.map(b => (

@@ -19,7 +19,7 @@ export default function EditProductPage() {
 
     const fetchProduct = async (id) => {
         try {
-            const response = await api.get(`/products/${id}`);
+            const response = await api.get(`/products/${id}/admin`);
             setProduct(response.data.data || response.data);
         } catch (error) {
             console.error('Error fetching product:', error);

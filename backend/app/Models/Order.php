@@ -23,6 +23,11 @@ class Order extends Model
         'payment_status',
         'order_status',
         'notes',
+        'division',
+        'district',
+        'upazila',
+        'post_code',
+        'delivery_method',
     ];
 
     protected $casts = [

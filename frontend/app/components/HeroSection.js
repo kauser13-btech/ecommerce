@@ -1,38 +1,34 @@
-import Link from 'next/link';
+import HeroSlider from './HeroSlider';
+import PinnedProduct from './PinnedProduct';
 
-export default function HeroSection() {
+export default function HeroSection({ products }) {
+    if (!products || products.length === 0) return null;
+
+    // Split products: First 3-4 for slider, next 2 for pinned
+    const sliderProducts = products.slice(0, 4);
+    const pinnedProducts = products.slice(4, 6);
+
     return (
-        <section className="bg-[#F5F5F7] pt-32 pb-20 px-4 overflow-hidden">
-            <div className="max-w-7xl mx-auto text-center">
-                <h2 className="text-5xl md:text-7xl font-semibold text-gray-900 mb-4 tracking-tight">
-                    iPhone 15 Pro
-                </h2>
-                <p className="text-2xl md:text-3xl text-gray-500 mb-8 font-light">
-                    Titanium. So strong. So light. So Pro.
-                </p>
-                <div className="flex items-center justify-center gap-6 mb-16">
-                    <Link
-                        href="/products/iphone-15-pro"
-                        className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors"
-                    >
-                        Buy
-                    </Link>
-                    <Link
-                        href="/products/iphone-15-pro"
-                        className="text-blue-600 hover:underline font-medium flex items-center gap-1"
-                    >
-                        Learn more
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                    </Link>
+        <section className="w-full pt-36 pb-12 bg-black">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left: Stacked Cards (Takes 1 column on desktop) */}
+                <div className="lg:col-span-1 flex flex-col gap-6 h-full">
+                    {pinnedProducts.map((product) => (
+                        <div key={product.id} className="flex-1">
+                            <PinnedProduct product={product} />
+                        </div>
+                    ))}
+                    {/* Fallback if not enough products */}
+                    {pinnedProducts.length < 2 && (
+                        <div className="flex-1 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 border border-dashed border-gray-200">
+                            {/* Empty State */}
+                        </div>
+                    )}
                 </div>
 
-                {/* Hero Image Placeholder */}
-                <div className="relative h-[400px] md:h-[600px] w-full max-w-5xl mx-auto">
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-gray-200 to-transparent rounded-t-3xl">
-                        <span className="text-6xl">📱</span>
-                    </div>
+                {/* Right: Hero Slider (Takes 2 columns on desktop) */}
+                <div className="lg:col-span-2 h-full">
+                    <HeroSlider products={sliderProducts} />
                 </div>
             </div>
         </section>

@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+import CartIcon from "@/assets/icons/cart.svg";
+import UserIcon from "@/assets/icons/user.svg";
+import SearchIcon from "@/assets/icons/search.svg";
+
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
@@ -36,7 +40,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 h-20' : 'bg-white/50 backdrop-blur-sm h-24'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 h-20 backdrop-blur-lg' : 'bg-white h-28'
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 h-full">
@@ -60,7 +64,7 @@ export default function Header() {
             <img
               src="/logo.png"
               alt="Appleians"
-              className={`w-auto transition-all duration-300 ${isScrolled ? 'h-12' : 'h-16'}`}
+              className={`w-auto transition-all duration-300 ${isScrolled ? 'h-12' : 'h-20'}`}
             />
           </Link>
 
@@ -79,21 +83,18 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors hidden sm:block">
-              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            <button className="flex justify-center items-center p-1 hover:bg-gray-100 rounded-full transition-colors hidden sm:flex">
+              <SearchIcon className="w-6 h-6 text-gray-700 hover:text-black overflow-visible" />
             </button>
 
-            <Link href="/cart" className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
-              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
+            <Link href="/cart" className="flex justify-center items-center p-1 hover:bg-gray-100 rounded-full transition-colors relative">
+              <CartIcon className="w-6 h-6 text-gray-700 hover:text-black overflow-visible" />
             </Link>
 
             {user ? (
               <div className="relative group hidden sm:block">
                 <button className="text-sm font-medium text-gray-700 hover:text-black">
+
                   {user.name}
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block border border-gray-100">
@@ -110,7 +111,8 @@ export default function Header() {
                 onClick={openLoginModal}
                 className="text-sm font-medium text-gray-700 hover:text-black hidden sm:block"
               >
-                Sign in
+                <UserIcon className="w-6 h-6 text-gray-700 hover:text-black overflow-visible" />
+
               </button>
             )}
           </div>

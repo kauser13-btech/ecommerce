@@ -19,9 +19,9 @@ export default function ShopByCategories() {
     ];
 
     return (
-        <div className="bg-[url('/orange-bg.png')]  bg-center bg-repeat-x w-full">
+        <div className="bg-[url('/orange-bg.png')]  bg-center bg-repeat-x w-full mt-20">
 
-            <section className="max-w-7xl mx-auto px-4 py-12">
+            <section className="max-w-7xl mx-auto px-4 py-20">
                 <div className="relative rounded-[3rem] overflow-hidden p-8 md:p-12 shadow-2xl border border-white/40">
                     <div className="absolute inset-0 bg-white/20 backdrop-blur-3xl"></div>
                     {/* Subtle gradient overlay for depth */}

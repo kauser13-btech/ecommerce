@@ -48,7 +48,7 @@
     <div class="max-w-7xl mx-auto py-8 px-4 mt-4">
         
         <div class="mb-8 relative">
-            <input type="text" id="searchInput" onkeyup="filterRoutes()" placeholder="Filter endpoints (e.g., 'sneakers', 'users')..." 
+            <input type="text" id="searchInput" onkeyup="filterRoutes()" placeholder="Filter endpoints ..." 
                 class="w-full pl-4 px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white text-lg">
         </div>
 

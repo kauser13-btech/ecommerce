@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Pink Mia',
             'email' => 'icesiv@gmail.com',
             'password' => 'EggMan-2020',
-            'role' => 'client',
+            'role' => 'admin',
         ]);
 
         User::factory()->create([

@@ -23,6 +23,7 @@ class Product extends Model
         'is_featured',
         'is_new',
         'is_active',
+        'options',
     ];
 
     protected $casts = [
@@ -30,6 +31,7 @@ class Product extends Model
         'original_price' => 'decimal:2',
         'specifications' => 'array',
         'images' => 'array',
+        'options' => 'array',
         'is_featured' => 'boolean',
         'is_new' => 'boolean',
         'is_active' => 'boolean',

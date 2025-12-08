@@ -9,7 +9,7 @@ export default function HeroSection({ products }) {
     const pinnedProducts = products.slice(4, 6);
 
     return (
-        <section className="w-full pt-36 pb-12 bg-black">
+        <section className="w-full pt-12 pb-12 bg-black">
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Stacked Cards (Takes 1 column on desktop) */}
                 <div className="lg:col-span-1 flex flex-col gap-6 h-full">

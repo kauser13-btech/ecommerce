@@ -17,10 +17,8 @@ export default function ProductDetail({ params }) {
   const [loading, setLoading] = useState(true);
   const [slug, setSlug] = useState(null);
 
-  // Mock Selectors State
-  const [selectedColor, setSelectedColor] = useState('Cosmic Orange');
-  const [selectedRegion, setSelectedRegion] = useState('E-Sim USA');
-  const [selectedStorage, setSelectedStorage] = useState('256GB');
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [parsedOptions, setParsedOptions] = useState([]);
 
   const { addToCart } = useCart();
 
@@ -65,7 +63,25 @@ export default function ProductDetail({ params }) {
     }
 
     fetchProduct();
+    fetchProduct();
   }, [slug]);
+
+  useEffect(() => {
+    if (product?.options) {
+      try {
+        const opts = typeof product.options === 'string' ? JSON.parse(product.options) : product.options;
+        setParsedOptions(opts);
+        const initial = {};
+        opts.forEach(opt => {
+          if (opt.values && opt.values.length > 0) initial[opt.name] = opt.values[0];
+        });
+        setSelectedOptions(initial);
+      } catch (e) {
+        console.error('Error parsing parsedOptions:', e);
+        setParsedOptions([]);
+      }
+    }
+  }, [product]);
 
   if (loading) {
     return (
@@ -103,22 +119,15 @@ export default function ProductDetail({ params }) {
   }
 
   const handleAddToCart = () => {
-    addToCart({ ...product, quantity });
+    addToCart({ ...product, quantity, selectedOptions });
   };
 
   const handleBuyNow = () => {
-    addToCart({ ...product, quantity });
+    addToCart({ ...product, quantity, selectedOptions });
     window.location.href = '/cart';
   };
 
-  // Mock Options
-  const colors = [
-    { name: 'Cosmic Orange', hex: '#E86C24' },
-    { name: 'Deep Blue', hex: '#2E3A59' },
-    { name: 'Silver', hex: '#E3E4E5' },
-  ];
-  const regions = ['E-Sim UAE', 'E-Sim USA', 'SIM+eSim HK/AUS'];
-  const storages = ['1TB', '2TB', '256GB', '512GB'];
+
 
   const discountAmount = product.original_price ? product.original_price - product.price : 0;
   const discountPercent = product.original_price ? Math.round((discountAmount / product.original_price) * 100) : 0;
@@ -127,7 +136,7 @@ export default function ProductDetail({ params }) {
     <>
       <Header />
 
-      <main className="min-h-screen bg-gray-50 py-12">
+      <main className="min-h-screen bg-gray-50 pt-40 pb-12">
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-white rounded-3xl shadow-sm p-8 mb-12">
             <div className="grid lg:grid-cols-2 gap-12">
@@ -192,67 +201,30 @@ export default function ProductDetail({ params }) {
                 </div>
 
                 {/* Selectors */}
+                {/* Dynamic Options */}
                 <div className="space-y-6">
-                  {/* Color */}
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-3">Color</h3>
-                    <div className="flex flex-wrap gap-3">
-                      {colors.map((color) => (
-                        <button
-                          key={color.name}
-                          onClick={() => setSelectedColor(color.name)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${selectedColor === color.name
-                            ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-500'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                            }`}
-                        >
-                          <span className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: color.hex }}></span>
-                          {color.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Region and Storage Grid */}
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Storage */}
-                    <div>
-                      <h3 className="font-bold text-gray-900 mb-3">Storage</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {storages.map((storage) => (
+                  {parsedOptions.map((option, idx) => (
+                    <div key={idx}>
+                      <h3 className="font-bold text-gray-900 mb-3">{option.name}</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {option.values.map((val) => (
                           <button
-                            key={storage}
-                            onClick={() => setSelectedStorage(storage)}
-                            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${selectedStorage === storage
-                              ? 'border-orange-500 text-orange-600 ring-1 ring-orange-500'
+                            key={val}
+                            onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
+                            className={`px-4 py-2 rounded-xl border transition-all ${selectedOptions[option.name] === val
+                              ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-500'
                               : 'border-gray-200 text-gray-600 hover:border-gray-300'
                               }`}
                           >
-                            {storage}
+                            {val}
                           </button>
                         ))}
                       </div>
                     </div>
-
-                    {/* Region */}
-                    <div>
-                      <h3 className="font-bold text-gray-900 mb-3">Region</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {regions.map((region) => (
-                          <button
-                            key={region}
-                            onClick={() => setSelectedRegion(region)}
-                            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${selectedRegion === region
-                              ? 'border-orange-500 text-orange-600 ring-1 ring-orange-500'
-                              : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                              }`}
-                          >
-                            {region}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  ))}
+                  {parsedOptions.length === 0 && (
+                    <p className="text-gray-500">No options available</p>
+                  )}
                 </div>
 
                 {/* Info Boxes */}

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '../lib/api';
+
+import ErrorModal from './ErrorModal';
 import { Loader2, Save, ArrowLeft, Trash2, Plus, Upload, X } from 'lucide-react';
 
 export default function ProductForm({ initialData, isEdit }) {
@@ -11,8 +13,9 @@ export default function ProductForm({ initialData, isEdit }) {
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
     const [options, setOptions] = useState([]);
-    const [imageFiles, setImageFiles] = useState([]);
-    const [previewUrls, setPreviewUrls] = useState([]);
+    const [errorModal, setErrorModal] = useState({ isOpen: false, errors: null });
+
+    const [images, setImages] = useState([]); // Unified state: { type: 'existing'|'new', url: string, file?: File }
 
     const [formData, setFormData] = useState({
         name: '',
@@ -44,16 +47,15 @@ export default function ProductForm({ initialData, isEdit }) {
         }
         if (initialData.images) {
             try {
-                // Handle if images is already a JSON string or array
                 const imgs = typeof initialData.images === 'string' ? JSON.parse(initialData.images) : initialData.images;
                 if (Array.isArray(imgs)) {
-                    setPreviewUrls(imgs);
+                    setImages(imgs.map(url => ({ type: 'existing', url })));
                 }
             } catch (e) {
                 console.error("Error parsing initial images", e);
             }
         } else if (initialData.image) {
-            setPreviewUrls([initialData.image]);
+            setImages([{ type: 'existing', url: initialData.image }]);
         }
 
     }, [initialData]);
@@ -82,6 +84,12 @@ export default function ProductForm({ initialData, isEdit }) {
             Object.keys(formData).forEach(key => {
                 if (key === 'image' || key === 'images') return; // Skip image fields, handled separately or via files
                 let value = formData[key];
+
+                // Convert booleans to 1/0 for backend validation
+                if (typeof value === 'boolean') {
+                    value = value ? '1' : '0';
+                }
+
                 if (key === 'specifications' && typeof value === 'object') {
                     value = JSON.stringify(value);
                 }
@@ -91,8 +99,17 @@ export default function ProductForm({ initialData, isEdit }) {
             // Append Options
             formDataObj.append('options', JSON.stringify(options));
 
-            // Append Images
-            imageFiles.forEach((file) => {
+            // Separate images
+            const existingImages = images.filter(img => img.type === 'existing').map(img => img.url);
+            const newImageFiles = images.filter(img => img.type === 'new').map(img => img.file);
+
+            // Append Existing Images
+            existingImages.forEach(url => {
+                formDataObj.append('existing_images[]', url);
+            });
+
+            // Append New Images
+            newImageFiles.forEach((file) => {
                 formDataObj.append('images[]', file);
             });
 
@@ -109,7 +126,8 @@ export default function ProductForm({ initialData, isEdit }) {
             router.push('/dashboard/products');
         } catch (error) {
             console.error('Error saving product:', error);
-            alert('Failed to save product: ' + (error.response?.data?.message || error.message));
+            const errors = error.response?.data?.errors || error.response?.data?.message || error.message;
+            setErrorModal({ isOpen: true, errors });
         } finally {
             setLoading(false);
         }
@@ -117,39 +135,16 @@ export default function ProductForm({ initialData, isEdit }) {
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
-        setImageFiles(prev => [...prev, ...files]);
-
-        // Generate previews
-        const newPreviews = files.map(file => URL.createObjectURL(file));
-        setPreviewUrls(prev => [...prev, ...newPreviews]);
+        const newImages = files.map(file => ({
+            type: 'new',
+            url: URL.createObjectURL(file),
+            file
+        }));
+        setImages(prev => [...prev, ...newImages]);
     };
 
     const removeImage = (index) => {
-        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-        // If it was a mock URL (existing image), we don't need to do anything to imageFiles
-        // If it was a new file, we should remove it from imageFiles.
-        // Complexity: identifying if the removed index corresponds to a new file or old URL.
-        // Simplification: Just clearing previews for visual. 
-        // Real implementation: we need to track if index maps to existing or new.
-        // Let's assume for now user clears all and re-uploads if they want to change, or we just append.
-        // To properly remove specific new files, we'd need to sync arrays. 
-
-        // Better strategy: Keep distinct arrays for existing vs new, OR just allow appending new ones.
-        // The prompt asked for "upload option", let's focus on adding keys.
-
-        // For now, let's just allow removing from the preview state which reflects what will be shown?
-        // Actually, if we remove from preview, we should probably remove from file list if it's a file.
-        // Let's rely on a simpler "Clear All" + "Add" flow or just Append.
-        // Removing specific items from mixed source (url vs file) is tricky without complex state.
-        // Let's implement a simple "remove" that assumes we are just managing the `previewUrls` list 
-        // and if it's a file, we remove from `imageFiles`.
-
-        // For simplicity in this iteration: Remove simply removes from preview. 
-        // We won't try to splice `imageFiles` perfectly without tracking indices.
-        // But we DO need to update `imageFiles`.
-
-        // Let's rebuild `imageFiles` and `previewUrls` together?
-        // Too complex for one step. Let's just allow Adding for now.
+        setImages(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleChange = (e) => {
@@ -384,12 +379,12 @@ export default function ProductForm({ initialData, isEdit }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
 
                         <div className="flex flex-wrap gap-4 mb-4">
-                            {previewUrls.map((url, idx) => (
+                            {images.map((img, idx) => (
                                 <div key={idx} className="relative w-24 h-24 border rounded-lg overflow-hidden group">
-                                    <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
-                                    {/* <button type="button" onClick={() => removeImage(idx)} className="absolute top-0 right-0 p-1 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <X className="w-4 h-4" />
-                                         </button> */}
+                                    <img src={img.url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                                    <button type="button" onClick={() => removeImage(idx)} className="absolute top-0 right-0 p-1 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <X className="w-4 h-4" />
+                                    </button>
                                 </div>
                             ))}
                             <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
@@ -450,6 +445,13 @@ export default function ProductForm({ initialData, isEdit }) {
                     </div>
                 </div>
             </div>
+
+
+            <ErrorModal
+                isOpen={errorModal.isOpen}
+                onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+                errors={errorModal.errors}
+            />
         </form >
     );
 }

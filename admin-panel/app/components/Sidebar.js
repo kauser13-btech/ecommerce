@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingBag, FolderTree, Image as ImageIcon, LogOut, Tag } from 'lucide-react';
+import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
 
 const menuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Products', href: '/dashboard/products', icon: Package },
     { name: 'Categories', href: '/dashboard/categories', icon: FolderTree },
-    { name: 'Brands', href: '/dashboard/brands', icon: Tag },
-    { name: 'Promo Codes', href: '/dashboard/promocodes', icon: Tag },
+    { name: 'Brands', href: '/dashboard/brands', icon: Star },
+    { name: 'Offers', href: '/dashboard/offers', icon: Percent },
+    { name: 'Promo Codes', href: '/dashboard/promocodes', icon: Ticket },
     { name: 'Orders', href: '/dashboard/orders', icon: ShoppingBag },
     { name: 'Media', href: '/dashboard/media', icon: ImageIcon },
 ];

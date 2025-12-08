@@ -44,11 +44,26 @@ Route::post('/promocodes/apply', [PromoCodeController::class, 'apply']);
 
 // Categories
 Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{slug}', [CategoryController::class, 'show']);
+Route::get('/categories/{id}', [CategoryController::class, 'show']); // Changed to ID or check if slug handling logic is robust
+Route::post('/categories', [CategoryController::class, 'store']);
+Route::put('/categories/{id}', [CategoryController::class, 'update']);
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
 // Brands
 Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{slug}', [BrandController::class, 'show']);
+Route::post('/brands', [BrandController::class, 'store']);
+Route::put('/brands/{id}', [BrandController::class, 'update']);
+Route::delete('/brands/{id}', [BrandController::class, 'destroy']);
+
+// Media
+Route::get('/media', [App\Http\Controllers\Api\MediaController::class, 'index']);
+Route::post('/media', [App\Http\Controllers\Api\MediaController::class, 'store']);
+Route::delete('/media', [App\Http\Controllers\Api\MediaController::class, 'destroy']);
+
+// Offers
+Route::apiResource('offers', App\Http\Controllers\Api\OfferController::class);
+Route::post('offers/reorder', [App\Http\Controllers\Api\OfferController::class, 'reorder']);
 
 // Orders (protected routes would use auth:sanctum middleware)
 Route::apiResource('orders', OrderController::class);

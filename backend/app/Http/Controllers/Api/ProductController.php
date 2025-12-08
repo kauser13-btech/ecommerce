@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -13,9 +14,23 @@ class ProductController extends Controller
         $query = Product::with(['category', 'brand'])->where('is_active', true);
 
         if ($request->has('category')) {
-            $query->whereHas('category', function($q) use ($request) {
-                $q->where('slug', $request->category);
-            });
+            $categorySlug = $request->category;
+            $category = Category::where('slug', $categorySlug)->first();
+
+            if ($category) {
+                // Get ID of category and all its children
+                $ids = collect([$category->id]);
+                // For now, let's just get immediate children. 
+                // If we need deep recursion we can loop or use a recursive relationship method.
+                // Assuming 1-level nesting for now based on request "Apple -> iPhone".
+                $ids = $ids->merge($category->children()->pluck('id'));
+                
+                $query->whereIn('category_id', $ids);
+            } else {
+                // If category not found by slug, maybe just force empty or ignore?
+                // Let's keep original behavior: if slug invalid, returns empty.
+                $query->where('id', -1); 
+            }
         }
 
         if ($request->has('brand')) {
@@ -40,7 +55,44 @@ class ProductController extends Controller
             $query->where('is_featured', true);
         }
 
-        $products = $query->latest()->paginate(20);
+        if ($request->has('sort')) {
+            switch ($request->sort) {
+                case 'featured':
+                    $query->orderBy('is_featured', 'desc');
+                    break;
+                case 'best-selling':
+                     // Placeholder: we don't have sales_count yet. 
+                     // Maybe sort by stock (sold out items last)? Or just random/popular?
+                     // Let's us created_at for now or if we had a 'views' column.
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                case 'title-asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'title-desc':
+                    $query->orderBy('name', 'desc');
+                    break;
+                case 'price-asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price-desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'date-asc':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+                case 'date-desc':
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                default:
+                    $query->latest();
+                    break;
+            }
+        } else {
+             $query->latest();
+        }
+
+        $products = $query->paginate(24); // Increased from 20 to 24 for better grid alignment (divisible by 2, 3, 4)
 
         return response()->json($products);
     }
@@ -184,8 +236,8 @@ class ProductController extends Controller
             'category_id' => 'exists:categories,id',
             'brand_id' => 'exists:brands,id',
             'image' => 'nullable|string',
-            'image' => 'nullable|string',
             'images' => 'nullable',
+            'existing_images' => 'nullable|array', // Array of URL strings
             'description' => 'nullable|string',
             'features' => 'nullable|string',
             'specifications' => 'nullable|json',
@@ -204,31 +256,48 @@ class ProductController extends Controller
         $data = $validated;
 
         // Handle Images
+        $finalImages = [];
+
+        // 1. Process Existing Images (sent from frontend as strings)
+        if ($request->has('existing_images')) {
+            $finalImages = $request->input('existing_images');
+            if (!is_array($finalImages)) {
+                 $finalImages = [];
+            }
+        }
+
+        // 2. Process New Uploads
         if ($request->hasFile('images')) {
-            $imagePaths = [];
             foreach ($request->file('images') as $image) {
                 $path = $image->store('products', 'public');
-                $imagePaths[] = asset('storage/' . $path);
+                $finalImages[] = asset('storage/' . $path);
             }
-            
-            // Merge with existing images if needed, or replace. 
-            // For now, let's append if there are existing images, or just replace if simple upload.
-            // But usually 'images' input replaces the set. Let's assume replace for new uploads + keep old ones passed as strings?
-            // Simplified: If 'images' files are sent, we consider them as *new* additions or replacements.
-            // But since we can't easily mix files and strings in same input name without complex frontend logic,
-            // let's assume the frontend sends 'existing_images' (strings) and 'new_images' (files). 
-            // Or simpler: the 'images' field in FormData can be multiple files.
-            
-            // MERGE Logic:
-            // Get current images
-            $currentImages = $product->images ?? [];
-            if (is_string($currentImages)) $currentImages = json_decode($currentImages, true) ?? [];
-            
-            $data['images'] = array_merge($currentImages, $imagePaths);
+        }
+        
+        // If no existing images and no new images were sent, but there were images before... 
+        // The frontend SHOULD send 'existing_images' as an empty array if all were removed.
+        // However, if the field is missing entirely, it might mean "don't touch images".
+        // But for a form submission, usually "missing field" = "empty" if we are being strict, OR we check if we should update images at all.
+        // To allow removing all images, the frontend must send `existing_images` as empty array if intended.
+        // To allow "partial update" (API style) where missing key = no change, we'd check $request->has().
+        // Since we are building a full edit form, let's assume we construct the final list from scratch if we see either field, 
+        // OR if we want to be safe: default to explicit inputs.
+        // Let's rely on the fact that if we are uploading/editing images, we will send 'existing_images' (even if empty).
+        
+        // Let's only update the 'images' column if we actually processed some image logic 
+        // OR if the user explicitly sent 'existing_images' (meaning they interacted with the image list).
+        if ($request->has('existing_images') || $request->hasFile('images')) {
+             $data['images'] = $finalImages;
 
-             // Set first image as main image if not provided/empty
-             if (empty($data['image']) && count($data['images']) > 0) {
-                $data['image'] = $data['images'][0];
+             // Logic to ensure main image is set
+            if (count($finalImages) > 0) {
+                // If main image is not set or not in the final list, pick the first one
+                // Use strict check? simplified for now.
+                if (empty($data['image']) || !in_array($data['image'], $finalImages)) {
+                     $data['image'] = $finalImages[0];
+                }
+            } else {
+                $data['image'] = null;
             }
         }
 

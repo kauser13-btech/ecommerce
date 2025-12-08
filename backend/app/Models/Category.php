@@ -10,6 +10,7 @@ class Category extends Model
         'name',
         'slug',
         'description',
+        'parent_id',
         'icon',
         'sort_order',
         'is_active',
@@ -22,5 +23,15 @@ class Category extends Model
     public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Category::class, 'parent_id');
     }
 }

@@ -12,17 +12,29 @@ export default function CategoryFormPage() {
 
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(isEdit);
+    const [categories, setCategories] = useState([]); // For parent selector
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
+        parent_id: '',
         description: ''
     });
 
     useEffect(() => {
+        fetchDependencies();
         if (isEdit) {
             fetchCategory();
         }
     }, [isEdit]);
+
+    const fetchDependencies = async () => {
+        try {
+            const response = await api.get('/categories');
+            setCategories(response.data.data || response.data);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    };
 
     const fetchCategory = async () => {
         try {
@@ -31,6 +43,7 @@ export default function CategoryFormPage() {
             setFormData({
                 name: data.name,
                 slug: data.slug,
+                parent_id: data.parent_id || '',
                 description: data.description || ''
             });
         } catch (error) {
@@ -57,6 +70,17 @@ export default function CategoryFormPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleNameChange = (e) => {
+        const name = e.target.value;
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        setFormData(prev => ({ ...prev, name, slug: isEdit ? prev.slug : slug }));
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     if (initialLoading) {
@@ -88,8 +112,9 @@ export default function CategoryFormPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
                         <input
                             type="text"
+                            name="name"
                             value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            onChange={handleNameChange}
                             className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -99,18 +124,37 @@ export default function CategoryFormPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
                         <input
                             type="text"
+                            name="slug"
                             value={formData.slug}
-                            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            onChange={handleChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                             required
                         />
                     </div>
 
                     <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
+                        <select
+                            name="parent_id"
+                            value={formData.parent_id}
+                            onChange={handleChange}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">None (Top Level)</option>
+                            {categories
+                                .filter(c => c.id != params.id) // Prevent selecting self as parent
+                                .map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                        </select>
+                    </div>
+
+                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <textarea
+                            name="description"
                             value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            onChange={handleChange}
                             rows={4}
                             className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         />

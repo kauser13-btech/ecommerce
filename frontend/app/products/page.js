@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import ProductCard from '../components/ProductCard';
+import ProductGridWithToolbar from '../components/ProductGridWithToolbar';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,7 @@ async function getProducts(searchParams) {
     if (searchParams.min_price) params.append('min_price', searchParams.min_price);
     if (searchParams.max_price) params.append('max_price', searchParams.max_price);
     if (searchParams.page) params.append('page', searchParams.page);
+    if (searchParams.sort) params.append('sort', searchParams.sort);
 
     const url = `${apiUrl}/products${params.toString() ? '?' + params.toString() : ''}`;
     console.log('Fetching products from:', url);
@@ -216,102 +217,7 @@ export default async function ProductsPage(props) {
 
             {/* Products Grid */}
             <div className="flex-1">
-              <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
-                <p className="text-sm text-gray-500">
-                  Showing <span className="font-bold text-black">{meta?.from || 0}-{meta?.to || 0}</span> of <span className="font-bold text-black">{meta?.total || 0}</span> results
-                </p>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm text-gray-500">Sort by:</label>
-                  <div className="relative">
-                    <select className="appearance-none bg-transparent pl-0 pr-8 py-2 text-sm font-bold text-gray-900 outline-none cursor-pointer focus:ring-0 border-none hover:text-orange-600 transition-colors">
-                      <option>Featured</option>
-                      <option>Price: Low to High</option>
-                      <option>Price: High to Low</option>
-                      <option>Newest First</option>
-                      <option>Best Selling</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {products.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {products.map((product) => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {meta && meta.last_page > 1 && (
-                    <div className="mt-16 flex justify-center gap-2">
-                      {/* Previous Button */}
-                      <Link
-                        href={currentPage > 1 ? getPageUrl(currentPage - 1) : '#'}
-                        className={`w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 transition-all ${currentPage > 1
-                          ? 'text-gray-600 hover:border-black hover:text-black'
-                          : 'text-gray-300 pointer-events-none'
-                          }`}
-                        aria-disabled={currentPage <= 1}
-                      >
-                        ←
-                      </Link>
-
-                      {/* Page Numbers */}
-                      {Array.from({ length: meta.last_page }, (_, i) => i + 1).map((page) => {
-                        // Simple pagination logic: show all for now, or optimize if many pages
-                        if (
-                          page === 1 ||
-                          page === meta.last_page ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
-                          return (
-                            <Link
-                              key={page}
-                              href={getPageUrl(page)}
-                              className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium transition-all ${currentPage === page
-                                ? 'bg-black text-white border border-black'
-                                : 'border border-gray-200 text-gray-600 hover:border-black hover:text-black'
-                                }`}
-                            >
-                              {page}
-                            </Link>
-                          );
-                        } else if (
-                          page === currentPage - 2 ||
-                          page === currentPage + 2
-                        ) {
-                          return <span key={page} className="w-10 h-10 flex items-center justify-center text-gray-400">...</span>;
-                        }
-                        return null;
-                      })}
-
-                      {/* Next Button */}
-                      <Link
-                        href={currentPage < meta.last_page ? getPageUrl(currentPage + 1) : '#'}
-                        className={`w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 transition-all ${currentPage < meta.last_page
-                          ? 'text-gray-600 hover:border-black hover:text-black'
-                          : 'text-gray-300 pointer-events-none'
-                          }`}
-                        aria-disabled={currentPage >= meta.last_page}
-                      >
-                        →
-                      </Link>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-20">
-                  <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span className="text-3xl">🔍</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">No products found</h3>
-                  <p className="text-gray-500">Try adjusting your filters or search criteria</p>
-                  <Link href="/products" className="inline-block mt-6 px-6 py-2.5 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
-                    Clear all filters
-                  </Link>
-                </div>
-              )}
+              <ProductGridWithToolbar products={products} meta={meta} />
             </div>
           </div>
         </div>

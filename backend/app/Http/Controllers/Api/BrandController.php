@@ -17,8 +17,35 @@ class BrandController extends Controller
         return response()->json($brands);
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:brands',
+            'logo' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        if (empty($validated['slug'])) {
+            $validated['slug'] = \Illuminate\Support\Str::slug($validated['name']);
+        }
+
+        $brand = Brand::create($validated);
+
+        return response()->json($brand, 201);
+    }
+
     public function show($slug)
     {
+        // If numeric, assume ID (for Admin)
+        if (is_numeric($slug)) {
+            $brand = Brand::find($slug);
+             if (!$brand) {
+                return response()->json(['message' => 'Brand not found'], 404);
+            }
+            return response()->json($brand);
+        }
+
         $brand = Brand::where('slug', $slug)
             ->where('is_active', true)
             ->with(['products' => function($query) {
@@ -27,5 +54,36 @@ class BrandController extends Controller
             ->firstOrFail();
 
         return response()->json($brand);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $brand = Brand::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:brands,slug,' . $id,
+            'logo' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        if (isset($validated['name']) && empty($validated['slug']) && $brand->slug === \Illuminate\Support\Str::slug($brand->name)) {
+             // Only auto-update slug if it wasn't manually set? 
+             // Simplification: if slug is passed as null, maybe re-generate? 
+             // Admin panel passes existing slug. 
+        }
+
+        $brand->update($validated);
+
+        return response()->json($brand);
+    }
+
+    public function destroy($id)
+    {
+        $brand = Brand::findOrFail($id);
+        // Optional: Check if products exist?
+        $brand->delete();
+
+        return response()->json(['message' => 'Brand deleted successfully']);
     }
 }

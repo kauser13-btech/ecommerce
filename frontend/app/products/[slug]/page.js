@@ -227,27 +227,6 @@ export default function ProductDetail({ params }) {
                   )}
                 </div>
 
-                {/* Info Boxes */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-[#e8fce8] p-4 rounded-xl flex items-center gap-3 text-sm text-gray-800">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    1 Year Official Warranty Support Except USA Variant
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-[#fff4e5] p-4 rounded-xl flex items-center gap-2 text-sm text-gray-800">
-                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      <div>
-                        <span className="block font-semibold">EMI Available</span>
-                        <span className="text-orange-600 underline cursor-pointer">View Plans</span>
-                      </div>
-                    </div>
-                    <button className="bg-[#e8fce8] p-4 rounded-xl flex items-center justify-center gap-2 text-sm font-medium text-green-800 hover:bg-[#dcfcda] transition">
-                      <WhatsappIcon className="w-5 h-5" />
-                      Whatsapp
-                    </button>
-                  </div>
-                </div>
-
                 {/* Actions */}
                 <div className="pt-6 border-t border-gray-100">
                   <h3 className="font-bold text-gray-900 mb-4">Select Quantity</h3>

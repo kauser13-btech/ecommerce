@@ -99,7 +99,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 h-20 shadow-xl' : 'bg-white h-auto border-b border-transparent'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 h-20 shadow-xl' : 'bg-white h-auto border-b border-gray-100'
         }`}
     >
       {/* Topbar */}
@@ -299,14 +299,23 @@ export default function Header() {
 
             {user ? (
               <div className="relative group hidden sm:block">
-                <button className="text-sm font-medium text-gray-700 hover:text-black">
-
-                  {user.name}
+                <button className="flex items-center text-sm font-medium text-gray-700 hover:text-black py-2">
+                  <UserIcon className="w-6 h-6 text-gray-700 hover:text-black overflow-visible" />
                 </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block border border-gray-100">
+                <div className="absolute right-0 mt-0 w-56 bg-white rounded-xl shadow-xl py-2 hidden group-hover:block border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-3 border-b border-gray-100 mb-1">
+                    <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  <Link
+                    href="/my-orders"
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                  >
+                    My Orders
+                  </Link>
                   <button
                     onClick={logout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
                     Sign out
                   </button>
@@ -318,7 +327,6 @@ export default function Header() {
                 className="text-sm font-medium text-gray-700 hover:text-black hidden sm:block"
               >
                 <UserIcon className="w-6 h-6 text-gray-700 hover:text-black overflow-visible" />
-
               </button>
             )}
           </div>

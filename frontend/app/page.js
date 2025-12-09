@@ -2,6 +2,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HeroSection from './components/HeroSection';
 import NewArrivalsGrid from './components/NewArrivalsGrid';
+import FeaturedProductGrid from './components/FeaturedProductGrid';
 
 // Fetch data on server-side
 export const dynamic = 'force-dynamic';
@@ -31,10 +32,23 @@ async function getNewArrivals() {
   }
 }
 
+async function getFeaturedProducts() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {
+      cache: 'no-store'
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    return [];
+  }
+}
+
 export default async function Home() {
-  const [offers, newArrivals] = await Promise.all([
+  const [offers, newArrivals, featuredProducts] = await Promise.all([
     getOffers(),
-    getNewArrivals()
+    getNewArrivals(),
+    getFeaturedProducts()
   ]);
 
   return (
@@ -44,7 +58,9 @@ export default async function Home() {
       <main className="pt-32">
         <HeroSection offers={offers} />
 
-        <NewArrivalsGrid />
+        <FeaturedProductGrid featuredProducts={featuredProducts} />
+
+        <NewArrivalsGrid newArrivals={newArrivals} />
 
       </main>
 

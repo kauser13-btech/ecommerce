@@ -199,18 +199,65 @@ export default function ContactUsPage() {
                             </div>
 
                             {/* Map Section - Full width on this column */}
-                            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-100 h-64 md:h-80 relative group">
-                                <div className="absolute inset-0 bg-gray-200 flex items-center justify-center animate-pulse">
-                                    <span className="text-gray-400 font-medium">Loading Map...</span>
+                            {/* Maps Section - Stacked vertically */}
+                            <div className="space-y-8">
+                                {/* Bashundhara Branch Map */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900">Bashundhara Branch</h3>
+                                        <a
+                                            href="https://www.google.com/maps/search/?api=1&query=Bashundhara+City+Shopping+Complex"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                        >
+                                            <MapPin size={16} className="mr-1" />
+                                            Get Directions
+                                        </a>
+                                    </div>
+                                    <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-100 h-64 md:h-72 relative group">
+                                        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center animate-pulse">
+                                            <span className="text-gray-400 font-medium">Loading Map...</span>
+                                        </div>
+                                        <iframe
+                                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.902442430136!2d90.3905166!3d23.7508581!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b888ad3dd41d%3A0xde4467b998a7c69e!2sBashundhara%20City%20Shopping%20Complex!5e0!3m2!1sen!2sbd!4v1620000000000!5m2!1sen!2sbd"
+                                            className="w-full h-full relative z-10"
+                                            style={{ border: 0 }}
+                                            allowFullScreen=""
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer-when-downgrade"
+                                        ></iframe>
+                                    </div>
                                 </div>
-                                <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.902442430136!2d90.3905166!3d23.7508581!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b888ad3dd41d%3A0xde4467b998a7c69e!2sBashundhara%20City%20Shopping%20Complex!5e0!3m2!1sen!2sbd!4v1620000000000!5m2!1sen!2sbd"
-                                    className="w-full h-full relative z-10"
-                                    style={{ border: 0 }}
-                                    allowFullScreen=""
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                ></iframe>
+
+                                {/* Tokyo Square Branch Map */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900">Tokyo Square Branch</h3>
+                                        <a
+                                            href="https://www.google.com/maps/search/?api=1&query=Tokyo+Square+Shopping+Mall+Mohammadpur"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                        >
+                                            <MapPin size={16} className="mr-1" />
+                                            Get Directions
+                                        </a>
+                                    </div>
+                                    <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-100 h-64 md:h-72 relative group">
+                                        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center animate-pulse">
+                                            <span className="text-gray-400 font-medium">Loading Map...</span>
+                                        </div>
+                                        <iframe
+                                            src="https://maps.google.com/maps?q=Tokyo%20Square%20Shopping%20Mall%20Mohammadpur&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                                            className="w-full h-full relative z-10"
+                                            style={{ border: 0 }}
+                                            allowFullScreen=""
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer-when-downgrade"
+                                        ></iframe>
+                                    </div>
+                                </div>
                             </div>
 
                         </div>

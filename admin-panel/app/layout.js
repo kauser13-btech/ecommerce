@@ -17,12 +17,15 @@ export const metadata = {
 };
 
 import { Toaster } from 'react-hot-toast';
+import AuthGuard from "./components/AuthGuard";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <AuthGuard>
+          {children}
+        </AuthGuard>
         <Toaster position="top-right" />
       </body>
     </html>

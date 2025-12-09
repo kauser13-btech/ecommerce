@@ -11,8 +11,8 @@ import Link from 'next/link';
 import ArrowLeftIcon from "@/assets/icons/arrow-left.svg";
 import ArrowRightIcon from "@/assets/icons/arrow-right.svg";
 
-export default function HeroSlider({ products }) {
-    if (!products || products.length === 0) return null;
+export default function HeroSlider({ offers }) {
+    if (!offers || offers.length === 0) return null;
 
     return (
         <div className="h-full w-full min-h-[600px] rounded-2xl overflow-hidden relative group">
@@ -30,13 +30,16 @@ export default function HeroSlider({ products }) {
                 autoplay={{ delay: 5000, disableOnInteraction: false }}
                 className="h-full w-full"
             >
-                {products.map((product) => (
-                    <SwiperSlide key={product.id} className="relative h-full w-full bg-black">
-                        <Link href={`/products/${product.slug}`} className="block h-full w-full relative">
-                            {product.image ? (
+                {offers.map((offer) => {
+                    const href = offer.product ? `/products/${offer.product.slug}` : '#';
+                    const isLink = !!offer.product;
+
+                    const SlideContent = (
+                        <div className="block h-full w-full relative">
+                            {offer.image ? (
                                 <Image
-                                    src={product.image}
-                                    alt={product.name}
+                                    src={offer.image}
+                                    alt={offer.title}
                                     fill
                                     className="object-cover opacity-80"
                                     priority
@@ -46,11 +49,19 @@ export default function HeroSlider({ products }) {
                                     No Image
                                 </div>
                             )}
+                        </div>
+                    );
 
-
-                        </Link>
-                    </SwiperSlide>
-                ))}
+                    return (
+                        <SwiperSlide key={offer.id} className="relative h-full w-full bg-black">
+                            {isLink ? (
+                                <Link href={href}>{SlideContent}</Link>
+                            ) : (
+                                SlideContent
+                            )}
+                        </SwiperSlide>
+                    );
+                })}
             </Swiper>
 
             {/* Navigation Buttons */}

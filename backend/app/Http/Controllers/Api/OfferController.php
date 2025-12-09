@@ -9,10 +9,22 @@ use App\Models\Offer;
 
 class OfferController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $offers = Offer::orderBy('sort_order')->get();
+        $query = Offer::orderBy('sort_order');
+        
+        if ($request->has('active_only')) {
+            $query->where('is_active', true);
+        }
+        
+        $offers = $query->get();
         return response()->json($offers);
+    }
+
+    public function show($id)
+    {
+        $offer = Offer::findOrFail($id);
+        return response()->json($offer);
     }
 
     public function store(Request $request)

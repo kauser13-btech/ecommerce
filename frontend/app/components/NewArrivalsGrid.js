@@ -73,15 +73,15 @@ export default function NewArrivalsGrid() {
                             href={item.link}
                             className="group block bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-xl transition-shadow duration-300 overflow-hidden"
                         >
-                            <div className="relative aspect-square p-6">
+                            <div className="relative aspect-square p-6 overflow-hidden">
                                 <Image
                                     src={item.image}
                                     alt={item.title}
                                     fill
-                                    className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                             </div>
-                            <div className="text-center pb-6">
+                            <div className="text-center p-2">
                                 <h3 className="font-semibold text-gray-700 text-lg group-hover:text-black transition-colors">
                                     {item.title}
                                 </h3>

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import Image from 'next/image';
 
+import { Image as ImageIcon } from 'lucide-react';
+
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
 
@@ -21,11 +23,11 @@ export default function ProductCard({ product }) {
             src={product.image}
             alt={product.name}
             fill
-            className="object-contain p-8 group-hover:scale-105 transition-transform duration-500 ease-out z-0"
+            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out z-0"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            No Image
+          <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300">
+            <ImageIcon size={40} strokeWidth={1.5} />
           </div>
         )}
 

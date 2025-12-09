@@ -81,8 +81,19 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Locations</p>
-                  <p className="text-gray-400 text-sm mb-2">Bashundhara City, Level 6, Block D</p>
-                  <p className="text-gray-400 text-sm">Tokyo Square, Level 6</p>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-orange-500 text-xs font-bold mb-0.5">TOKYO SQUARE BRANCH</p>
+                      <p className="text-gray-400 text-xs">Shop: 616, 643 | Level: 6</p>
+                      <p className="text-gray-400 text-xs">Japan Garden City, Mohammadpur</p>
+                    </div>
+                    <div>
+                      <p className="text-orange-500 text-xs font-bold mb-0.5">BASHUNDHARA BRANCH</p>
+                      <p className="text-gray-400 text-xs">Shop: 1, 2 | 12, 13</p>
+                      <p className="text-gray-400 text-xs">Level: 6, Block: D</p>
+                      <p className="text-gray-400 text-xs">Bashundhara City, Panthapath</p>
+                    </div>
+                  </div>
                 </div>
               </li>
             </ul>

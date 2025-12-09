@@ -1,21 +1,20 @@
 import Header from './components/Header';
 import Footer from './components/Footer';
-import ShopByCategories from './components/ShopByCategories';
-import ProductCard from './components/ProductCard';
 import HeroSection from './components/HeroSection';
 import NewArrivalsGrid from './components/NewArrivalsGrid';
 
 // Fetch data on server-side
 export const dynamic = 'force-dynamic';
 
-async function getFeaturedProducts() {
+async function getOffers() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/offers?active_only=true`, {
       cache: 'no-store'
     });
-    return await response.json();
+    const offers = await response.json();
+    return offers;
   } catch (error) {
-    console.error('Error fetching featured products:', error);
+    console.error('Error fetching offers:', error);
     return [];
   }
 }
@@ -33,8 +32,8 @@ async function getNewArrivals() {
 }
 
 export default async function Home() {
-  const [featuredProducts, newArrivals] = await Promise.all([
-    getFeaturedProducts(),
+  const [offers, newArrivals] = await Promise.all([
+    getOffers(),
     getNewArrivals()
   ]);
 
@@ -43,11 +42,9 @@ export default async function Home() {
       <Header />
 
       <main className="pt-32">
-        <HeroSection products={newArrivals} />
+        <HeroSection offers={offers} />
 
         <NewArrivalsGrid />
-
-        {/* <ShopByCategories /> */}
 
       </main>
 

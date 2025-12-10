@@ -1,8 +1,7 @@
-'use client';
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -80,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             await api.post('/logout');
+            toast.success('Signed out successfully');
         } catch (error) {
             console.error('Logout failed', error);
         } finally {

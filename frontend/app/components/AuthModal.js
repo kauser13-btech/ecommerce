@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 export default function AuthModal() {
     const { authModal, closeAuthModal, openLoginModal, openRegisterModal, login, register } = useAuth();
@@ -13,6 +14,7 @@ export default function AuthModal() {
     });
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
 
     // Reset form when modal opens or view changes
     useEffect(() => {
@@ -20,6 +22,7 @@ export default function AuthModal() {
             setFormData({ name: '', email: '', password: '', password_confirmation: '' });
             setError('');
             setFieldErrors({});
+            setIsLoading(false);
         }
     }, [authModal.isOpen, authModal.view]);
 
@@ -33,19 +36,26 @@ export default function AuthModal() {
         e.preventDefault();
         setError('');
         setFieldErrors({});
+        setIsLoading(true);
 
-        let result;
-        if (authModal.view === 'login') {
-            result = await login(formData.email, formData.password);
-        } else {
-            result = await register(formData.name, formData.email, formData.password, formData.password_confirmation);
-        }
-
-        if (!result.success) {
-            setError(result.message);
-            if (result.errors) {
-                setFieldErrors(result.errors);
+        try {
+            let result;
+            if (authModal.view === 'login') {
+                result = await login(formData.email, formData.password);
+            } else {
+                result = await register(formData.name, formData.email, formData.password, formData.password_confirmation);
             }
+
+            if (!result.success) {
+                setError(result.message);
+                if (result.errors) {
+                    setFieldErrors(result.errors);
+                }
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -70,15 +80,11 @@ export default function AuthModal() {
                 </button>
 
                 <div className="p-8">
-                    <div className="text-center mb-8">
+                    <div className="text-center mb-4">
+                        <img src="/logo.png" alt="Appleians" className="h-18 mx-auto mb-2" />
                         <h2 className="text-2xl font-bold text-gray-900">
                             {authModal.view === 'login' ? 'Welcome Back' : 'Create Account'}
                         </h2>
-                        <p className="text-sm text-gray-500 mt-2">
-                            {authModal.view === 'login'
-                                ? 'Enter your details to sign in'
-                                : 'Join us to start shopping'}
-                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,9 +155,14 @@ export default function AuthModal() {
 
                         <button
                             type="submit"
-                            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+                            disabled={isLoading}
+                            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {authModal.view === 'login' ? 'Sign In' : 'Create Account'}
+                            {isLoading ? (
+                                <Loader2 className="animate-spin h-5 w-5" />
+                            ) : (
+                                authModal.view === 'login' ? 'Sign In' : 'Create Account'
+                            )}
                         </button>
                     </form>
 

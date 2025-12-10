@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
             <WhatsAppButton />
             <AuthModal />
             <CartModal />
-            <Toaster position="bottom-right" />
+            <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>
       </body>

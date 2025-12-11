@@ -55,7 +55,7 @@ export default async function Home() {
     <div className="bg-white min-h-screen">
       <Header />
 
-      <main className="pt-32">
+      <main className="pt-28">
         <HeroSection offers={offers} />
 
         <FeaturedProductGrid featuredProducts={featuredProducts} />

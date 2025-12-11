@@ -3,6 +3,8 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
+import ImageLightbox from '../../components/ImageLightbox';
+import { Maximize2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
 
@@ -18,6 +20,7 @@ export default function ProductDetail({ params }) {
   const [parsedOptions, setParsedOptions] = useState([]);
 
   const { addToCart } = useCart();
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
     async function getSlug() {
@@ -126,6 +129,8 @@ export default function ProductDetail({ params }) {
 
 
 
+
+
   const discountAmount = product.original_price ? product.original_price - product.price : 0;
   const discountPercent = product.original_price ? Math.round((discountAmount / product.original_price) * 100) : 0;
 
@@ -139,16 +144,25 @@ export default function ProductDetail({ params }) {
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Left Column - Images */}
               <div className="space-y-6">
-                <div className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden">
+                <div
+                  className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden cursor-zoom-in group"
+                  onClick={() => setIsLightboxOpen(true)}
+                >
                   {images[selectedImage] ? (
                     <img
                       src={images[selectedImage]}
                       alt={product.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="text-gray-400">No Image</div>
                   )}
+                  {/* Zoom Hint Overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-end justify-end p-4 opacity-0 group-hover:opacity-100">
+                    <span className="bg-white/90 backdrop-blur text-gray-800 p-2.5 rounded-full shadow-sm hover:scale-110 transition-transform">
+                      <Maximize2 size={20} />
+                    </span>
+                  </div>
                 </div>
                 {images.length > 1 && (
                   <div className="flex gap-4 overflow-x-auto pb-2">
@@ -267,6 +281,13 @@ export default function ProductDetail({ params }) {
           )}
         </div>
       </main>
+
+      <ImageLightbox
+        images={images}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        initialIndex={selectedImage}
+      />
 
       <Footer />
     </>

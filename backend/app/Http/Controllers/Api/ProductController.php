@@ -99,7 +99,8 @@ class ProductController extends Controller
 
     public function show($slug)
     {
-        $product = Product::with(['category', 'brand'])
+
+        $product = Product::with(['category', 'brand', 'variants'])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
@@ -205,6 +206,7 @@ class ProductController extends Controller
             'is_featured' => 'boolean',
             'is_new' => 'boolean',
             'options' => 'nullable|json',
+            'variants' => 'nullable|json',
         ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -213,6 +215,11 @@ class ProductController extends Controller
         }
 
         $data = $validated;
+        
+        // Ensure options is an array to prevent double encoding matching the cast
+        if (isset($data['options']) && is_string($data['options'])) {
+            $data['options'] = json_decode($data['options'], true);
+        }
         
         // Handle Images
         if ($request->hasFile('images')) {
@@ -232,6 +239,14 @@ class ProductController extends Controller
         }
 
         $product = Product::create($data);
+
+        // Handle Variants
+        if ($request->has('variants')) {
+            $variants = json_decode($request->variants, true); 
+            if (is_array($variants)) {
+               $product->variants()->createMany($variants);
+            }
+        }
 
         return response()->json([
             'message' => 'Product created successfully',
@@ -263,6 +278,7 @@ class ProductController extends Controller
             'is_featured' => 'boolean',
             'is_new' => 'boolean',
             'options' => 'nullable|json',
+            'variants' => 'nullable|json',
         ]);
 
 
@@ -272,6 +288,11 @@ class ProductController extends Controller
         }
 
         $data = $validated;
+
+        // Ensure options is an array to prevent double encoding
+        if (isset($data['options']) && is_string($data['options'])) {
+            $data['options'] = json_decode($data['options'], true);
+        }
 
         // Handle Images
         $finalImages = [];
@@ -321,6 +342,40 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        // Handle Variants
+        if ($request->has('variants')) {
+             $variantsInput = json_decode($request->variants, true);
+             if (is_array($variantsInput)) {
+                 $existingIds = [];
+                 foreach ($variantsInput as $variantData) {
+                     $variant = null;
+
+                     // 1. Try to find by ID if provided
+                     if (isset($variantData['id'])) {
+                         $variant = $product->variants()->find($variantData['id']);
+                     }
+
+                     // 2. If not found by ID, try to find by SKU (within this product)
+                     // This handles cases where frontend regenerates variants (loosing IDs) but keeps SKUs
+                     if (!$variant && isset($variantData['sku'])) {
+                         $variant = $product->variants()->where('sku', $variantData['sku'])->first();
+                     }
+
+                     if ($variant) {
+                         // Update existing
+                         $variant->update($variantData);
+                         $existingIds[] = $variant->id;
+                     } else {
+                         // Create new
+                         $newVariant = $product->variants()->create($variantData);
+                         $existingIds[] = $newVariant->id;
+                     }
+                 }
+                 // Delete removed variants
+                 $product->variants()->whereNotIn('id', $existingIds)->delete();
+             }
+        }
+
         return response()->json([
             'message' => 'Product updated successfully',
             'data' => $product
@@ -335,9 +390,10 @@ class ProductController extends Controller
         return response()->json(['message' => 'Product deleted successfully']);
     }
 
+
     public function adminShow($id)
     {
-        $product = Product::with(['category', 'brand'])
+        $product = Product::with(['category', 'brand', 'variants'])
             ->findOrFail($id);
 
         return response()->json($product);

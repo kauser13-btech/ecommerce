@@ -43,10 +43,6 @@ export default function ProductForm({ initialData, isEdit }) {
 
     useEffect(() => {
         const newFormData = { ...formData, specifications: JSON.stringify(specs.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {})) };
-        // Avoid infinite loop if values are same (though difficult with stringify order). 
-        // Better: Update formData ONLY on submit or use a separate effect that checks equality.
-        // Actually, easiest is to just update specs -> formData.specifications in a separate synchronous handler or just before submit.
-        // But for now, let's just let the specs state be the source of truth for the UI, and updating formData.specifications on change.
     }, [specs]);
 
     useEffect(() => {
@@ -84,6 +80,19 @@ export default function ProductForm({ initialData, isEdit }) {
                 }
             } else if (initialData.image) {
                 setImages([{ type: 'existing', url: initialData.image }]);
+            }
+            if (initialData.variants) {
+                setVariants(initialData.variants);
+            }
+            if (initialData.options) {
+                try {
+                    const opts = typeof initialData.options === 'string' ? JSON.parse(initialData.options) : initialData.options;
+                    if (Array.isArray(opts)) {
+                        setOptions(opts);
+                    }
+                } catch (e) {
+                    console.error("Error parsing options", e);
+                }
             }
         }
     }, [initialData]);
@@ -127,6 +136,9 @@ export default function ProductForm({ initialData, isEdit }) {
             // Append Options
             formDataObj.append('options', JSON.stringify(options));
 
+            // Append Variants
+            formDataObj.append('variants', JSON.stringify(variants));
+
             // Separate images
             const existingImages = images.filter(img => img.type === 'existing').map(img => img.url);
             const newImageFiles = images.filter(img => img.type === 'new').map(img => img.file);
@@ -161,20 +173,6 @@ export default function ProductForm({ initialData, isEdit }) {
         }
     };
 
-    const handleImageChange = (e) => {
-        const files = Array.from(e.target.files);
-        const newImages = files.map(file => ({
-            type: 'new',
-            url: URL.createObjectURL(file),
-            file
-        }));
-        setImages(prev => [...prev, ...newImages]);
-    };
-
-    const removeImage = (index) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
-    };
-
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
@@ -201,14 +199,65 @@ export default function ProductForm({ initialData, isEdit }) {
         setOptions(newOptions);
     };
 
+    const [variants, setVariants] = useState([]);
+
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
             e.preventDefault();
         }
     };
 
+    const generateVariants = () => {
+        if (options.length === 0) return;
+
+        const cartesian = (...a) => a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
+
+        const validOptions = options.filter(opt => opt.name && opt.values.length > 0);
+        if (validOptions.length === 0) return;
+
+        const combinations = cartesian(...validOptions.map(opt => opt.values));
+
+        // Adjust logic for single option:
+        let finalCombinations = combinations;
+        if (validOptions.length === 1) {
+            finalCombinations = validOptions[0].values.map(v => [v]);
+        }
+
+        const newVariants = finalCombinations.map(combo => {
+            // Map values to keys
+            const attributes = {};
+            combo.forEach((val, idx) => {
+                attributes[validOptions[idx].name] = val;
+            });
+
+            // Generate basic SKU suggestion
+            const skuSuffix = combo.join('-').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+
+            return {
+                attributes,
+                price: formData.price,
+                stock: formData.stock,
+                sku: `${formData.sku}-${skuSuffix}`,
+                is_active: true
+            };
+        });
+
+        setVariants(newVariants);
+    };
+
+    const handleVariantChange = (index, field, value) => {
+        const newVariants = [...variants];
+        newVariants[index][field] = value;
+        setVariants(newVariants);
+    };
+
+    const removeVariant = (index) => {
+        setVariants(variants.filter((_, i) => i !== index));
+    };
+
     return (
         <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-8">
+            {/* header */}
             <div className="flex items-center justify-between">
                 <button
                     type="button"
@@ -228,6 +277,8 @@ export default function ProductForm({ initialData, isEdit }) {
                 </button>
             </div>
 
+
+            {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Info */}
                 <div className="lg:col-span-2 space-y-6">
@@ -305,45 +356,6 @@ export default function ProductForm({ initialData, isEdit }) {
                                     ],
                                 }}
                             />
-                        </div>
-                    </div>
-
-                    {/* Organization */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Organization</h3>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                <select
-                                    name="category_id"
-                                    value={formData.category_id}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                                <select
-                                    name="brand_id"
-                                    value={formData.brand_id}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                >
-                                    <option value="">Select Brand</option>
-                                    {brands.map(b => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                    ))}
-                                </select>
-                            </div>
                         </div>
                     </div>
 
@@ -427,127 +439,7 @@ export default function ProductForm({ initialData, isEdit }) {
                             )}
                         </div>
                     </div>
-                </div>
 
-                {/* Sidebar Info */}
-                <div className="space-y-6">
-                    {/* Product Images */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Product Images</h3>
-
-                        <div className="space-y-4">
-                            <div>
-                                <ImageUpload
-                                    value={images.map(img => img.type === 'existing' ? img.url : img.file)}
-                                    onChange={(newFiles) => {
-                                        // newFiles can be array of mixed URL strings and File objects
-                                        // But ImageUpload returns the NEW list.
-                                        // We need to sync this back to our `images` state structure:
-                                        // { type, url|file }
-
-                                        // Actually `ImageUpload` returns the *entire* new list of values.
-                                        // We need to reconstruct our internal state.
-
-                                        const updatedImages = Array.isArray(newFiles) ? newFiles.map(item => {
-                                            if (item instanceof File) {
-                                                return { type: 'new', file: item, url: URL.createObjectURL(item) };
-                                            }
-                                            return { type: 'existing', url: item };
-                                        }) : [];
-
-                                        setImages(updatedImages);
-                                    }}
-                                    multiple={true}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Upload multiple images. The first image will be used as the main thumbnail.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    {/* Pricing & Inventory */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Pricing & Inventory</h3>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                                <input
-                                    type="number"
-                                    name="price"
-                                    value={formData.price}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Original Price</label>
-                                <input
-                                    type="number"
-                                    name="original_price"
-                                    value={formData.original_price}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                            <input
-                                type="number"
-                                name="stock"
-                                value={formData.stock}
-                                onChange={handleChange}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                required
-                            />
-                        </div>
-                    </div>
-
-
-                    {/* Settings */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
-
-                        <div className="space-y-2">
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    name="is_active"
-                                    checked={formData.is_active}
-                                    onChange={handleChange}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-sm text-gray-700">Active</span>
-                            </label>
-
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    name="is_featured"
-                                    checked={formData.is_featured}
-                                    onChange={handleChange}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-sm text-gray-700">Featured Product</span>
-                            </label>
-
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    name="is_new"
-                                    checked={formData.is_new}
-                                    onChange={handleChange}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-sm text-gray-700">New Arrival</span>
-                            </label>
-                        </div>
-                    </div>
 
                     {/* Variations */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
@@ -591,11 +483,241 @@ export default function ProductForm({ initialData, isEdit }) {
                             {options.length === 0 && (
                                 <p className="text-sm text-gray-500 italic text-center py-2">No variations added</p>
                             )}
+
+                            {options.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={generateVariants}
+                                    className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors mt-4"
+                                >
+                                    Generate Variants from Options
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Generated Variants List */}
+                    {variants.length > 0 && (
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Generated Variants ({variants.length})</h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left text-gray-500">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3">Variant</th>
+                                            <th className="px-4 py-3">Price</th>
+                                            <th className="px-4 py-3">Stock</th>
+                                            <th className="px-4 py-3">SKU</th>
+                                            <th className="px-4 py-3">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {variants.map((variant, index) => (
+                                            <tr key={index} className="border-b hover:bg-gray-50">
+                                                <td className="px-4 py-3 font-medium text-gray-900">
+                                                    {Object.entries(variant.attributes).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="number"
+                                                        value={variant.price}
+                                                        onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                                                        className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="number"
+                                                        value={variant.stock}
+                                                        onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                                                        className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="text"
+                                                        value={variant.sku}
+                                                        onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
+                                                        className="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeVariant(index)}
+                                                        className="text-red-500 hover:text-red-700"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Sidebar Info */}
+                <div className="space-y-6">
+                    {/* Product Images */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Product Images</h3>
+
+                        <div className="space-y-4">
+                            <div>
+                                <ImageUpload
+                                    value={images.map(img => img.type === 'existing' ? img.url : img.file)}
+                                    onChange={(newFiles) => {
+                                        // newFiles can be array of mixed URL strings and File objects
+                                        // But ImageUpload returns the NEW list.
+                                        // We need to sync this back to our `images` state structure:
+                                        // { type, url|file }
+
+                                        // Actually `ImageUpload` returns the *entire* new list of values.
+                                        // We need to reconstruct our internal state.
+
+                                        const updatedImages = Array.isArray(newFiles) ? newFiles.map(item => {
+                                            if (item instanceof File) {
+                                                return { type: 'new', file: item, url: URL.createObjectURL(item) };
+                                            }
+                                            return { type: 'existing', url: item };
+                                        }) : [];
+
+                                        setImages(updatedImages);
+                                    }}
+                                    multiple={true}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Upload multiple images. The first image will be used as the main thumbnail.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pricing & Inventory */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Pricing & Inventory</h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                                <input
+                                    type="number"
+                                    name="price"
+                                    value={formData.price}
+                                    onChange={handleChange}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Original Price</label>
+                                <input
+                                    type="number"
+                                    name="original_price"
+                                    value={formData.original_price}
+                                    onChange={handleChange}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                            <input
+                                type="number"
+                                name="stock"
+                                value={formData.stock}
+                                onChange={handleChange}
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {/* Settings */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
+
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="is_active"
+                                    checked={formData.is_active}
+                                    onChange={handleChange}
+                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">Active</span>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="is_featured"
+                                    checked={formData.is_featured}
+                                    onChange={handleChange}
+                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">Featured Product</span>
+                            </label>
+
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="is_new"
+                                    checked={formData.is_new}
+                                    onChange={handleChange}
+                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">New Arrival</span>
+                            </label>
+                        </div>
+                    </div>
+
+
+                    {/* Organization */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Organization</h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select
+                                    name="category_id"
+                                    value={formData.category_id}
+                                    onChange={handleChange}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                                <select
+                                    name="brand_id"
+                                    value={formData.brand_id}
+                                    onChange={handleChange}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                >
+                                    <option value="">Select Brand</option>
+                                    {brands.map(b => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
 
             <ErrorModal
                 isOpen={errorModal.isOpen}

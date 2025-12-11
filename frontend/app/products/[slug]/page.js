@@ -73,6 +73,9 @@ export default function ProductDetail({ params }) {
     fetchProduct();
   }, [slug]);
 
+  // ... existing code ...
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
   useEffect(() => {
     if (product?.options) {
       try {
@@ -95,6 +98,26 @@ export default function ProductDetail({ params }) {
       setActiveTab('description');
     }
   }, [product]);
+
+  // Find matching variant
+  useEffect(() => {
+    if (!product?.variants || !selectedOptions) {
+      setSelectedVariant(null);
+      return;
+    }
+
+    const variant = product.variants.find(v => {
+      try {
+        const vAttrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+        // Check if every selected option matches this variant's attributes
+        return Object.entries(selectedOptions).every(([key, value]) => vAttrs[key] === value);
+      } catch (e) {
+        return false;
+      }
+    });
+
+    setSelectedVariant(variant || null);
+  }, [product, selectedOptions]);
 
   if (loading) {
     return (
@@ -132,11 +155,29 @@ export default function ProductDetail({ params }) {
   }
 
   const handleAddToCart = () => {
-    addToCart({ ...product, quantity, selectedOptions });
+    addToCart({
+      ...product,
+      id: selectedVariant ? selectedVariant.id : product.id, // Use variant ID if selected? Or keep product ID and add variant_id? Usually Cart item needs unique ID.
+      variant_id: selectedVariant?.id,
+      price: selectedVariant ? selectedVariant.price : product.price,
+      image: selectedVariant?.image || product.image,
+      sku: selectedVariant?.sku || product.sku,
+      quantity,
+      selectedOptions
+    });
   };
 
   const handleBuyNow = () => {
-    addToCart({ ...product, quantity, selectedOptions });
+    addToCart({
+      ...product,
+      id: selectedVariant ? selectedVariant.id : product.id,
+      variant_id: selectedVariant?.id,
+      price: selectedVariant ? selectedVariant.price : product.price,
+      image: selectedVariant?.image || product.image,
+      sku: selectedVariant?.sku || product.sku,
+      quantity,
+      selectedOptions
+    });
     window.location.href = '/cart';
   };
 
@@ -228,31 +269,34 @@ export default function ProductDetail({ params }) {
                     <span>{product.brand?.name}</span>
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
+                  <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
 
-                  <div className="flex items-center flex-wrap gap-4">
-                    <span className="text-3xl font-bold text-gray-900">৳ {Number(product.price).toLocaleString()}</span>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span className="text-3xl font-bold text-gray-900">
+                      ৳ {selectedVariant ? Number(selectedVariant.price).toLocaleString() : Number(product.price).toLocaleString()}
+                    </span>
                     {discountPercent > 0 && (
                       <span className="bg-[#ccfccb] text-[#0f5132] px-3 py-1 rounded-full text-sm font-bold">
                         {discountPercent}% off
                       </span>
                     )}
-                    {product.original_price > product.price && (
+                    {product.original_price > (selectedVariant?.price || product.price) && (
                       <span className="text-gray-400 line-through text-lg">৳{Number(product.original_price).toLocaleString()}</span>
                     )}
 
-                    {product.stock > 0 ? (
-                      <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">In Stock</span>
+                    {(selectedVariant ? selectedVariant.stock : product.stock) > 0 ? (
+                      <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
+                        In Stock ({selectedVariant ? selectedVariant.stock : product.stock})
+                      </span>
                     ) : (
                       <span className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-bold">Out of Stock</span>
                     )}
-
-                    <span className="text-gray-500 text-sm ml-auto">Code: <span className="text-gray-900 font-medium">{product.sku || 'N/A'}</span></span>
                   </div>
                 </div>
 
                 {/* Selectors */}
                 {/* Dynamic Options */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {parsedOptions.map((option, idx) => (
                     <div key={idx}>
                       <h3 className="font-bold text-gray-900 mb-3">{option.name}</h3>

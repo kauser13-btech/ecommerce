@@ -1,12 +1,18 @@
 'use client';
 
 import Header from '../../components/Header';
+import Link from 'next/link';
 import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
 import ImageLightbox from '../../components/ImageLightbox';
-import { Maximize2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Maximize2, ChevronRight, Home, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../../context/CartContext';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/autoplay';
 
 export default function ProductDetail({ params }) {
   const [quantity, setQuantity] = useState(1);
@@ -21,6 +27,7 @@ export default function ProductDetail({ params }) {
 
   const { addToCart } = useCart();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
     async function getSlug() {
@@ -81,6 +88,12 @@ export default function ProductDetail({ params }) {
         setParsedOptions([]);
       }
     }
+
+    if (product?.specifications) {
+      setActiveTab('specifications');
+    } else if (product?.description) {
+      setActiveTab('description');
+    }
   }, [product]);
 
   if (loading) {
@@ -140,6 +153,30 @@ export default function ProductDetail({ params }) {
 
       <main className="min-h-screen bg-gray-50 pt-40 pb-12">
         <div className="max-w-7xl mx-auto px-4">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
+            <Link href="/" className="hover:text-orange-500 transition-colors flex items-center gap-1">
+              <Home size={16} />
+              <span>Home</span>
+            </Link>
+            <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+
+            {product.category && (
+              <>
+                <Link
+                  href={`/products?category=${product.category.slug}`}
+                  className="hover:text-orange-500 transition-colors"
+                >
+                  {product.category.name}
+                </Link>
+                <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+              </>
+            )}
+
+            <span className="text-gray-900 font-medium truncate">{product.name}</span>
+          </nav>
+
+          {/* Main Product */}
           <div className="bg-white rounded-3xl shadow-sm p-8 mb-12">
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Left Column - Images */}
@@ -268,17 +305,152 @@ export default function ProductDetail({ params }) {
             </div>
           </div>
 
-          {/* Related Products */}
-          {relatedProducts.length > 0 && (
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Info</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {relatedProducts.slice(0, 4).map((relatedProduct) => (
-                  <ProductCard key={relatedProduct.id} product={relatedProduct} />
-                ))}
+          {/* Bottom Part */}
+          <div className="grid lg:grid-cols-4 gap-8 mb-12">
+            {/* Details Section */}
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                {(() => {
+                  const tabs = [
+                    { id: 'description', label: 'Details', content: product.description },
+                    { id: 'specifications', label: 'Specifications', content: product.specifications },
+                    { id: 'features', label: 'Features', content: product.features },
+                  ].filter(tab => tab.content);
+
+                  if (tabs.length === 0) return null;
+
+                  // Ensure active tab is valid
+                  const currentTab = tabs.find(t => t.id === activeTab) ? activeTab : tabs[0].id;
+
+                  return (
+                    <div>
+                      <div className="flex flex-wrap gap-8 border-b border-gray-100 mb-8">
+                        {tabs.map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`pb-4 text-lg font-bold border-b-2 transition-colors relative ${currentTab === tab.id
+                              ? 'text-orange-500 border-orange-500'
+                              : 'text-gray-400 border-transparent hover:text-gray-600'
+                              }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="prose prose-stone max-w-none">
+                        {(() => {
+                          const tab = tabs.find(t => t.id === currentTab);
+                          if (!tab) return null;
+
+                          if (tab.id === 'specifications') {
+                            try {
+                              const specs = typeof tab.content === 'string' ? JSON.parse(tab.content) : tab.content;
+
+                              // Handle Key-Value Object
+                              if (typeof specs === 'object' && specs !== null && !Array.isArray(specs)) {
+                                return (
+                                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <tbody className="divide-y divide-gray-200 bg-white">
+                                        {Object.entries(specs).map(([key, value], idx) => (
+                                          <tr key={key} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                                            <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              }
+                              // Handle Array of Objects (if applicable, e.g. [{name: 'Weight', value: '1kg'}])
+                              if (Array.isArray(specs)) {
+                                return (
+                                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <tbody className="divide-y divide-gray-200 bg-white">
+                                        {specs.map((item, idx) => {
+                                          const key = item.name || item.key || item.label || Object.keys(item)[0];
+                                          const value = item.value || item.content || Object.values(item)[0];
+                                          return (
+                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                                              <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
+                                              <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              }
+                            } catch (e) {
+                              console.log('Failed to parse specifications JSON', e);
+                            }
+                          }
+
+                          return <div dangerouslySetInnerHTML={{ __html: tab.content }} />;
+                        })()}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
-            </section>
-          )}
+            </div>
+
+            <div className="lg:col-span-1">
+              {relatedProducts.length > 0 && (
+                <section>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+                  <div className="relative group">
+                    <Swiper
+                      modules={[Autoplay, Navigation]}
+                      spaceBetween={20}
+                      slidesPerView={1.2}
+                      autoplay={{
+                        delay: 3000,
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: true
+                      }}
+                      navigation={{
+                        prevEl: '.custom-swiper-button-prev',
+                        nextEl: '.custom-swiper-button-next',
+                      }}
+                      breakpoints={{
+                        640: {
+                          slidesPerView: 2.2,
+                        },
+                        1024: {
+                          slidesPerView: 1,
+                        }
+                      }}
+                      className="related-products-slider"
+                    >
+                      {relatedProducts.slice(0, 6).map((relatedProduct) => (
+                        <SwiperSlide key={relatedProduct.id}>
+                          <div className="h-full">
+                            <ProductCard product={relatedProduct} />
+                          </div>
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
+
+                    {/* Custom Navigation */}
+                    <div className="flex items-center justify-center gap-4 mt-4">
+                      <button className="custom-swiper-button-prev w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:border-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <ArrowLeft size={20} />
+                      </button>
+                      <button className="custom-swiper-button-next w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:border-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <ArrowRight size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

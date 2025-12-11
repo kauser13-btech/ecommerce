@@ -72,6 +72,9 @@ export default function OffersPage() {
     const [hasOrderChanged, setHasOrderChanged] = useState(false);
     const [savingOrder, setSavingOrder] = useState(false);
 
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [offerToDelete, setOfferToDelete] = useState(null);
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -97,16 +100,23 @@ export default function OffersPage() {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (confirm('Are you sure you want to delete this offer?')) {
-            try {
-                await api.delete(`/offers/${id}`);
-                setOffers(offers.filter(o => o.id !== id));
-                toast.success('Offer deleted');
-            } catch (error) {
-                console.error('Error deleting offer:', error);
-                toast.error('Failed to delete offer');
-            }
+    const handleDeleteClick = (offer) => {
+        setOfferToDelete(offer);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!offerToDelete) return;
+
+        try {
+            await api.delete(`/offers/${offerToDelete.id}`);
+            setOffers(offers.filter(o => o.id !== offerToDelete.id));
+            toast.success('Offer deleted successfully');
+            setDeleteModalOpen(false);
+            setOfferToDelete(null);
+        } catch (error) {
+            console.error('Error deleting offer:', error);
+            toast.error('Failed to delete offer');
         }
     };
 
@@ -217,7 +227,7 @@ export default function OffersPage() {
                                 key={offer.id}
                                 offer={offer}
                                 index={index}
-                                onDelete={handleDelete}
+                                onDelete={() => handleDeleteClick(offer)}
                                 onToggleStatus={handleToggleStatus}
                             />
                         ))}
@@ -228,6 +238,37 @@ export default function OffersPage() {
             {offers.length === 0 && !loading && (
                 <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-gray-200 border-dashed">
                     No offers found. Create your first offer!
+                </div>
+            )}
+
+            {/* Custom Delete Confirmation Modal */}
+            {deleteModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
+                        <div className="text-center">
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                                <Trash2 className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Offer?</h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Are you sure you want to delete this offer? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={() => setDeleteModalOpen(false)}
+                                    className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-sm"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

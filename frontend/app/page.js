@@ -1,70 +1,38 @@
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HeroSection from './components/HeroSection';
-import NewArrivalsGrid from './components/NewArrivalsGrid';
-import FeaturedProductGrid from './components/FeaturedProductGrid';
+export default function Home() {
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white relative overflow-hidden">
+            {/* Background Gradients */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/30 rounded-full blur-[120px] animate-pulse"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/30 rounded-full blur-[120px] animate-pulse delay-1000"></div>
+            </div>
 
-// Fetch data on server-side
-export const dynamic = 'force-dynamic';
+            {/* Content */}
+            <div className="z-10 text-center px-4 max-w-3xl mx-auto">
+                <div className="mb-8 inline-block">
+                    <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm text-gray-300 backdrop-blur-sm">
+                        Something amazing is in the works
+                    </span>
+                </div>
 
-async function getOffers() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/offers?active_only=true`, {
-      cache: 'no-store'
-    });
-    const offers = await response.json();
-    return offers;
-  } catch (error) {
-    console.error('Error fetching offers:', error);
-    return [];
-  }
-}
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 drop-shadow-sm">
+                    Coming Soon
+                </h1>
 
-async function getNewArrivals() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/new-arrivals`, {
-      cache: 'no-store'
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching new arrivals:', error);
-    return [];
-  }
-}
+                <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                    We are currently crafting a new experience. <br className="hidden md:block" />
+                    Our site is under construction, but we will be back shortly with something special.
+                </p>
 
-async function getFeaturedProducts() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {
-      cache: 'no-store'
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching featured products:', error);
-    return [];
-  }
-}
+                <div className="mt-12 flex justify-center gap-4">
+                    <div className="h-1 w-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                </div>
+            </div>
 
-export default async function Home() {
-  const [offers, newArrivals, featuredProducts] = await Promise.all([
-    getOffers(),
-    getNewArrivals(),
-    getFeaturedProducts()
-  ]);
-
-  return (
-    <div className="bg-white min-h-screen">
-      <Header />
-
-      <main className="pt-32">
-        <HeroSection offers={offers} />
-
-        <FeaturedProductGrid featuredProducts={featuredProducts} />
-
-        <NewArrivalsGrid newArrivals={newArrivals} />
-
-      </main>
-
-      <Footer />
-    </div>
-  );
+            {/* Footer/Copyright */}
+            <div className="absolute bottom-8 text-gray-500 text-sm z-10">
+                &copy; {new Date().getFullYear()} Appleians. All rights reserved.
+            </div>
+        </div>
+    );
 }

@@ -41,7 +41,7 @@ export default function HeroSlider({ offers }) {
                                     src={offer.image}
                                     alt={offer.title}
                                     fill
-                                    className="object-cover opacity-80"
+                                    className="object-cover"
                                     priority
                                 />
                             ) : (

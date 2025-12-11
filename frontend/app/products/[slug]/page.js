@@ -3,11 +3,8 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
-import AppleLogo from '@/assets/icons/apple-logo.svg';
-import WhatsappIcon from '@/assets/icons/whatsapp.svg';
 
 export default function ProductDetail({ params }) {
   const [quantity, setQuantity] = useState(1);
@@ -142,12 +139,12 @@ export default function ProductDetail({ params }) {
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Left Column - Images */}
               <div className="space-y-6">
-                <div className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 p-8 flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden">
                   {images[selectedImage] ? (
                     <img
                       src={images[selectedImage]}
                       alt={product.name}
-                      className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="text-gray-400">No Image</div>
@@ -159,10 +156,10 @@ export default function ProductDetail({ params }) {
                       <button
                         key={idx}
                         onClick={() => setSelectedImage(idx)}
-                        className={`w-20 h-20 flex-shrink-0 bg-white rounded-xl border-2 p-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
+                        className={`w-20 h-20 flex-shrink-0 bg-white overflow-hidden rounded-xl border-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
                           } transition-colors`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-contain" />
+                        <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -174,8 +171,10 @@ export default function ProductDetail({ params }) {
                 {/* Header */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-gray-800 font-medium">
-                    <AppleLogo className="w-5 h-5" />
-                    <span>Apple</span>
+                    {product.brand?.logo && (
+                      <img src={product.brand.logo} alt={product.brand.name} className="w-6 h-6 object-contain" />
+                    )}
+                    <span>{product.brand?.name}</span>
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
 
@@ -222,9 +221,6 @@ export default function ProductDetail({ params }) {
                       </div>
                     </div>
                   ))}
-                  {parsedOptions.length === 0 && (
-                    <p className="text-gray-500">No options available</p>
-                  )}
                 </div>
 
                 {/* Actions */}

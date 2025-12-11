@@ -5,9 +5,13 @@ import Link from 'next/link';
 import api from '../../lib/api';
 import { Plus, Pencil, Trash2, Search, Loader2, Check, X, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
 export default function ProductsPage() {
+    const searchParams = useSearchParams();
+    const showFeaturedOnly = searchParams.get('featured') === 'true';
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -101,9 +105,11 @@ export default function ProductsPage() {
         }
     };
 
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredProducts = products.filter(product => {
+        const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
+        const matchesFeatured = showFeaturedOnly ? product.is_featured : true;
+        return matchesSearch && matchesFeatured;
+    });
 
     if (loading) {
         return (
@@ -128,7 +134,14 @@ export default function ProductsPage() {
             />
 
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {showFeaturedOnly ? 'Featured Products' : 'Products'}
+                    </h1>
+                    {showFeaturedOnly && (
+                        <p className="text-sm text-gray-500 mt-1">Showing only featured items</p>
+                    )}
+                </div>
                 <Link
                     href="/dashboard/products/new"
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

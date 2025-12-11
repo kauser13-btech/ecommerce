@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import api from '../lib/api';
 
 import ErrorModal from './ErrorModal';
-import { Loader2, Save, ArrowLeft, Trash2, Plus, Upload, X } from 'lucide-react';
+import ImageUpload from './ImageUpload';
+import { Loader2, Save, ArrowLeft, Trash2, Plus } from 'lucide-react';
 
 export default function ProductForm({ initialData, isEdit }) {
     const router = useRouter();
@@ -41,23 +42,22 @@ export default function ProductForm({ initialData, isEdit }) {
             setFormData({
                 ...initialData,
                 category_id: initialData.category?.id || initialData.category_id,
-                category_id: initialData.category?.id || initialData.category_id,
                 brand_id: initialData.brand?.id || initialData.brand_id,
             });
-        }
-        if (initialData.images) {
-            try {
-                const imgs = typeof initialData.images === 'string' ? JSON.parse(initialData.images) : initialData.images;
-                if (Array.isArray(imgs)) {
-                    setImages(imgs.map(url => ({ type: 'existing', url })));
-                }
-            } catch (e) {
-                console.error("Error parsing initial images", e);
-            }
-        } else if (initialData.image) {
-            setImages([{ type: 'existing', url: initialData.image }]);
-        }
 
+            if (initialData.images) {
+                try {
+                    const imgs = typeof initialData.images === 'string' ? JSON.parse(initialData.images) : initialData.images;
+                    if (Array.isArray(imgs)) {
+                        setImages(imgs.map(url => ({ type: 'existing', url })));
+                    }
+                } catch (e) {
+                    console.error("Error parsing initial images", e);
+                }
+            } else if (initialData.image) {
+                setImages([{ type: 'existing', url: initialData.image }]);
+            }
+        }
     }, [initialData]);
 
     const fetchDependencies = async () => {
@@ -376,32 +376,35 @@ export default function ProductForm({ initialData, isEdit }) {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="text-lg font-semibold text-gray-900">Media</h3>
 
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+                                <ImageUpload
+                                    value={images.map(img => img.type === 'existing' ? img.url : img.file)}
+                                    onChange={(newFiles) => {
+                                        // newFiles can be array of mixed URL strings and File objects
+                                        // But ImageUpload returns the NEW list.
+                                        // We need to sync this back to our `images` state structure:
+                                        // { type, url|file }
 
-                        <div className="flex flex-wrap gap-4 mb-4">
-                            {images.map((img, idx) => (
-                                <div key={idx} className="relative w-24 h-24 border rounded-lg overflow-hidden group">
-                                    <img src={img.url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
-                                    <button type="button" onClick={() => removeImage(idx)} className="absolute top-0 right-0 p-1 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ))}
-                            <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
-                                <Upload className="w-6 h-6 text-gray-400" />
-                                <span className="text-xs text-gray-500 mt-1">Upload</span>
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="hidden"
+                                        // Actually `ImageUpload` returns the *entire* new list of values.
+                                        // We need to reconstruct our internal state.
+
+                                        const updatedImages = Array.isArray(newFiles) ? newFiles.map(item => {
+                                            if (item instanceof File) {
+                                                return { type: 'new', file: item, url: URL.createObjectURL(item) };
+                                            }
+                                            return { type: 'existing', url: item };
+                                        }) : [];
+
+                                        setImages(updatedImages);
+                                    }}
+                                    multiple={true}
                                 />
-                            </label>
-                        </div>
-
-                        <div className="text-xs text-gray-500">
-                            Upload multiple images. The first image will be used as the main thumbnail.
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Upload multiple images. The first image will be used as the main thumbnail.
+                                </p>
+                            </div>
                         </div>
                     </div>
 

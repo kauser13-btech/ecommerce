@@ -112,7 +112,7 @@ class ProductController extends Controller
         $products = Product::with(['category', 'brand'])
             ->where('is_featured', true)
             ->where('is_active', true)
-            ->latest()
+            ->orderBy('featured_order', 'asc') // Added order
             ->limit(8)
             ->get();
 
@@ -124,11 +124,29 @@ class ProductController extends Controller
         $products = Product::with(['category', 'brand'])
             ->where('is_new', true)
             ->where('is_active', true)
-            ->latest()
+            ->orderBy('new_arrival_order', 'asc') // Added order
             ->limit(8)
             ->get();
 
         return response()->json($products);
+    }
+    
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:products,id',
+            'items.*.order' => 'required|integer',
+            'type' => 'required|in:featured,new'
+        ]);
+
+        $column = $request->type === 'featured' ? 'featured_order' : 'new_arrival_order';
+
+        foreach ($request->items as $item) {
+            Product::where('id', $item['id'])->update([$column => $item['order']]);
+        }
+
+        return response()->json(['message' => 'Order updated successfully']);
     }
 
     public function search(Request $request)

@@ -36,6 +36,7 @@ Route::get('/products/search', [ProductController::class, 'search']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/products/{id}/admin', [ProductController::class, 'adminShow']);
 Route::post('/products', [ProductController::class, 'store']);
+Route::post('/products/reorder', [ProductController::class, 'reorder']);
 Route::put('/products/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 

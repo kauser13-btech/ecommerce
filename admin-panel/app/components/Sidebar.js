@@ -1,14 +1,24 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag, ChevronDown, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 
 const menuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Products', href: '/dashboard/products', icon: Package },
+    {
+        name: 'Products',
+        href: '/dashboard/products',
+        icon: Package,
+        submenu: [
+            { name: 'New Arrivals', href: '/dashboard/products/new-arrivals' },
+            { name: 'Featured', href: '/dashboard/products/featured' },
+            { name: 'Add Product', href: '/dashboard/products/new' }
+        ]
+    },
     { name: 'Categories', href: '/dashboard/categories', icon: FolderTree },
     { name: 'Brands', href: '/dashboard/brands', icon: Star },
     { name: 'Offers', href: '/dashboard/offers', icon: Percent },
@@ -20,11 +30,42 @@ const menuItems = [
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const [expandedMenus, setExpandedMenus] = useState({});
+
+    // Auto-expand menu if current path matches
+    useEffect(() => {
+        const newExpanded = { ...expandedMenus };
+        let hasChanges = false;
+
+        menuItems.forEach(item => {
+            if (item.submenu) {
+                // Check if we are in this section (e.g. /dashboard/products/...)
+                // OR if the exact href matches (e.g. /dashboard/products)
+                if (pathname.startsWith(item.href)) {
+                    if (!newExpanded[item.name]) {
+                        newExpanded[item.name] = true;
+                        hasChanges = true;
+                    }
+                }
+            }
+        });
+
+        if (hasChanges) {
+            setExpandedMenus(newExpanded);
+        }
+    }, [pathname]);
 
     const handleLogout = () => {
         localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_user');
         router.push('/login');
+    };
+
+    const toggleMenu = (name) => {
+        setExpandedMenus(prev => ({
+            ...prev,
+            [name]: !prev[name]
+        }));
     };
 
     return (
@@ -35,25 +76,87 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            <nav className="flex-1 px-4 py-6 space-y-1">
+            <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
                 <div className="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Overview
                 </div>
                 {menuItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    // Active if specific path matches or parent is active for submenu items (simplified)
+                    const isActive = pathname === item.href || (item.submenu && pathname.startsWith(item.href) && pathname !== item.href);
+                    // Note: products page handling is tricky with startsWith logic if other routes confuse it, but dashboard paths are usually structured.
+
+                    const isExpanded = expandedMenus[item.name];
+                    const hasSubmenu = item.submenu && item.submenu.length > 0;
+
                     return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                                ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200'
-                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                }`}
-                        >
-                            <Icon className={`h-5 w-5 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                            {item.name}
-                        </Link>
+                        <div key={item.name}>
+                            {hasSubmenu ? (
+                                <button
+                                    onClick={() => toggleMenu(item.name)}
+                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive || isExpanded
+                                        ? 'bg-indigo-50 text-indigo-700'
+                                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Icon className={`h-5 w-5 transition-colors ${isActive || isExpanded ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                        {item.name}
+                                    </div>
+                                    {isExpanded ? (
+                                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                                    ) : (
+                                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                                    )}
+                                </button>
+                            ) : (
+                                <Link
+                                    href={item.href}
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                                        ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200'
+                                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <Icon className={`h-5 w-5 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                    {item.name}
+                                </Link>
+                            )}
+
+                            {/* Submenu Items */}
+                            {hasSubmenu && isExpanded && (
+                                <div className="mt-1 ml-4 space-y-1 pl-4 border-l-2 border-slate-100">
+                                    <Link
+                                        href={item.href}
+                                        className={`block px-3 py-2 rounded-lg text-sm transition-colors ${pathname === item.href && !window.location.search.includes('featured')
+                                            ? 'text-indigo-600 font-medium bg-indigo-50/50'
+                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        All Products
+                                    </Link>
+                                    {item.submenu.map((subItem) => {
+                                        // Simple approximation for active state handling query params
+                                        // We'll rely on string match for simplicity or just basic link behavior
+                                        const isSubActive = subItem.href.includes('?')
+                                            ? typeof window !== 'undefined' && window.location.search.includes('featured=true') && subItem.href.includes('featured=true')
+                                            : pathname === subItem.href;
+
+                                        return (
+                                            <Link
+                                                key={subItem.name}
+                                                href={subItem.href}
+                                                className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isSubActive
+                                                    ? 'text-indigo-600 font-medium bg-indigo-50/50'
+                                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                {subItem.name}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </nav>
@@ -61,9 +164,9 @@ export default function Sidebar() {
             <div className="p-4 border-t border-slate-100">
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
+                    className="flex items-center justify-center gap-3 px-3 py-3 w-full rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 hover:shadow-red-300 transition-all duration-200 group perspective-button"
                 >
-                    <LogOut className="h-5 w-5 text-slate-400 group-hover:text-red-500 transition-colors" />
+                    <LogOut className="h-5 w-5 text-red-100 group-hover:text-white transition-colors" />
                     Logout
                 </button>
             </div>

@@ -22,9 +22,8 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.applegadgetsbd.com',
-        port: '',
-        pathname: '/**',
+        hostname: 'tiktok.appleians.com',
+        pathname: '**',
       },
     ],
   },

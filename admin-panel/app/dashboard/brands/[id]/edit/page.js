@@ -1,10 +1,9 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import api from '@/app/lib/api';
+import ImageUpload from '@/app/components/ImageUpload';
 
 export default function EditBrandPage({ params }) {
     const router = useRouter();
@@ -15,19 +14,9 @@ export default function EditBrandPage({ params }) {
         slug: '',
         logo: '',
     });
-
-    // Unwrap params using React.use() or await if available in this Next.js version context, 
-    // but typically params is a promise in newer Next.js versions for Server Components.
-    // Since this is a Client Component ('use client'), params comes as prop directly in some versions,
-    // or as a Promise in newer ones (Next 15+).
-    // Safest pattern in Next.js 15+ client component:
-    // const { id } = React.use(params);
-
-    // However, if params is passed directly:
     const [id, setId] = useState(null);
 
     useEffect(() => {
-        // Resolve params
         Promise.resolve(params).then(p => {
             setId(p.id);
             fetchBrand(p.id);
@@ -57,7 +46,22 @@ export default function EditBrandPage({ params }) {
         setLoading(true);
 
         try {
-            await api.put(`/brands/${id}`, formData);
+            const data = new FormData();
+            data.append('name', formData.name);
+            if (formData.slug) data.append('slug', formData.slug);
+
+            if (formData.logo instanceof File) {
+                data.append('logo', formData.logo);
+            }
+            // For Update, usually don't need to check string URL unless we want to allow manually editing URL text, 
+            // but ImageUpload main usage is file selection or keeping existing.
+
+            data.append('_method', 'PUT');
+
+            await api.post(`/brands/${id}`, data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
             router.push('/dashboard/brands');
             router.refresh();
         } catch (error) {
@@ -117,20 +121,13 @@ export default function EditBrandPage({ params }) {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Logo URL
+                        Brand Logo
                     </label>
-                    <input
-                        type="text"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <ImageUpload
                         value={formData.logo}
-                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                        placeholder="https://..."
+                        onChange={(file) => setFormData({ ...formData, logo: file })}
+                        label="Upload Logo"
                     />
-                    {formData.logo && (
-                        <div className="mt-2 p-2 border border-gray-200 rounded-lg inline-block">
-                            <img src={formData.logo} alt="Preview" className="h-16 w-auto object-contain" />
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">

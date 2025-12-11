@@ -11,7 +11,7 @@ export default function Home() {
             <div className="z-10 text-center px-4 max-w-3xl mx-auto">
                 <div className="mb-8 inline-block">
                     <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm text-gray-300 backdrop-blur-sm">
-                        Something amazing is in the works
+                        Something <a href="/home" rel="noopener noreferrer" className="text-orange-500">amazing</a> is in the works
                     </span>
                 </div>
 

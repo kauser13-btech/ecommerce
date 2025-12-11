@@ -99,7 +99,7 @@ export default async function ProductsPage(props) {
     <>
       <Header />
 
-      <main className="min-h-screen bg-white pt-40">
+      <main className="min-h-screen bg-white pt-28">
         {/* Category Hero Section */}
         <div className="bg-gray-50 border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 py-12">
@@ -187,27 +187,6 @@ export default async function ProductsPage(props) {
                           }`}
                       >
                         {brandItem.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">Price Range</h3>
-                  <div className="space-y-1">
-                    {[
-                      { label: 'Under ৳25,000', value: '0-25000' },
-                      { label: '৳25,000 - ৳50,000', value: '25000-50000' },
-                      { label: '৳50,000 - ৳100,000', value: '50000-100000' },
-                      { label: 'Above ৳100,000', value: '100000+' },
-                    ].map((range) => (
-                      <Link
-                        key={range.value}
-                        href={`/products?price=${range.value}`}
-                        className="block px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-all"
-                      >
-                        {range.label}
                       </Link>
                     ))}
                   </div>

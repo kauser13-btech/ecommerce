@@ -1,13 +1,18 @@
 'use client';
 
 import Header from '../../components/Header';
+import Link from 'next/link';
 import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
-import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import ImageLightbox from '../../components/ImageLightbox';
+import { Maximize2, ChevronRight, Home, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../../context/CartContext';
-import AppleLogo from '@/assets/icons/apple-logo.svg';
-import WhatsappIcon from '@/assets/icons/whatsapp.svg';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/autoplay';
 
 export default function ProductDetail({ params }) {
   const [quantity, setQuantity] = useState(1);
@@ -21,6 +26,8 @@ export default function ProductDetail({ params }) {
   const [parsedOptions, setParsedOptions] = useState([]);
 
   const { addToCart } = useCart();
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
     async function getSlug() {
@@ -66,6 +73,9 @@ export default function ProductDetail({ params }) {
     fetchProduct();
   }, [slug]);
 
+  // ... existing code ...
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
   useEffect(() => {
     if (product?.options) {
       try {
@@ -81,7 +91,33 @@ export default function ProductDetail({ params }) {
         setParsedOptions([]);
       }
     }
+
+    if (product?.specifications) {
+      setActiveTab('specifications');
+    } else if (product?.description) {
+      setActiveTab('description');
+    }
   }, [product]);
+
+  // Find matching variant
+  useEffect(() => {
+    if (!product?.variants || !selectedOptions) {
+      setSelectedVariant(null);
+      return;
+    }
+
+    const variant = product.variants.find(v => {
+      try {
+        const vAttrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+        // Check if every selected option matches this variant's attributes
+        return Object.entries(selectedOptions).every(([key, value]) => vAttrs[key] === value);
+      } catch (e) {
+        return false;
+      }
+    });
+
+    setSelectedVariant(variant || null);
+  }, [product, selectedOptions]);
 
   if (loading) {
     return (
@@ -119,13 +155,33 @@ export default function ProductDetail({ params }) {
   }
 
   const handleAddToCart = () => {
-    addToCart({ ...product, quantity, selectedOptions });
+    addToCart({
+      ...product,
+      id: selectedVariant ? selectedVariant.id : product.id, // Use variant ID if selected? Or keep product ID and add variant_id? Usually Cart item needs unique ID.
+      variant_id: selectedVariant?.id,
+      price: selectedVariant ? selectedVariant.price : product.price,
+      image: selectedVariant?.image || product.image,
+      sku: selectedVariant?.sku || product.sku,
+      quantity,
+      selectedOptions
+    });
   };
 
   const handleBuyNow = () => {
-    addToCart({ ...product, quantity, selectedOptions });
+    addToCart({
+      ...product,
+      id: selectedVariant ? selectedVariant.id : product.id,
+      variant_id: selectedVariant?.id,
+      price: selectedVariant ? selectedVariant.price : product.price,
+      image: selectedVariant?.image || product.image,
+      sku: selectedVariant?.sku || product.sku,
+      quantity,
+      selectedOptions
+    });
     window.location.href = '/cart';
   };
+
+
 
 
 
@@ -138,20 +194,53 @@ export default function ProductDetail({ params }) {
 
       <main className="min-h-screen bg-gray-50 pt-40 pb-12">
         <div className="max-w-7xl mx-auto px-4">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
+            <Link href="/" className="hover:text-orange-500 transition-colors flex items-center gap-1">
+              <Home size={16} />
+              <span>Home</span>
+            </Link>
+            <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+
+            {product.category && (
+              <>
+                <Link
+                  href={`/products?category=${product.category.slug}`}
+                  className="hover:text-orange-500 transition-colors"
+                >
+                  {product.category.name}
+                </Link>
+                <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+              </>
+            )}
+
+            <span className="text-gray-900 font-medium truncate">{product.name}</span>
+          </nav>
+
+          {/* Main Product */}
           <div className="bg-white rounded-3xl shadow-sm p-8 mb-12">
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Left Column - Images */}
               <div className="space-y-6">
-                <div className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 p-8 flex items-center justify-center relative overflow-hidden">
+                <div
+                  className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden cursor-zoom-in group"
+                  onClick={() => setIsLightboxOpen(true)}
+                >
                   {images[selectedImage] ? (
                     <img
                       src={images[selectedImage]}
                       alt={product.name}
-                      className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="text-gray-400">No Image</div>
                   )}
+                  {/* Zoom Hint Overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-end justify-end p-4 opacity-0 group-hover:opacity-100">
+                    <span className="bg-white/90 backdrop-blur text-gray-800 p-2.5 rounded-full shadow-sm hover:scale-110 transition-transform">
+                      <Maximize2 size={20} />
+                    </span>
+                  </div>
                 </div>
                 {images.length > 1 && (
                   <div className="flex gap-4 overflow-x-auto pb-2">
@@ -159,10 +248,10 @@ export default function ProductDetail({ params }) {
                       <button
                         key={idx}
                         onClick={() => setSelectedImage(idx)}
-                        className={`w-20 h-20 flex-shrink-0 bg-white rounded-xl border-2 p-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
+                        className={`w-20 h-20 flex-shrink-0 bg-white overflow-hidden rounded-xl border-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
                           } transition-colors`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-contain" />
+                        <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -174,35 +263,40 @@ export default function ProductDetail({ params }) {
                 {/* Header */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-gray-800 font-medium">
-                    <AppleLogo className="w-5 h-5" />
-                    <span>Apple</span>
+                    {product.brand?.logo && (
+                      <img src={product.brand.logo} alt={product.brand.name} className="w-6 h-6 object-contain" />
+                    )}
+                    <span>{product.brand?.name}</span>
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
+                  <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
 
-                  <div className="flex items-center flex-wrap gap-4">
-                    <span className="text-3xl font-bold text-gray-900">৳ {Number(product.price).toLocaleString()}</span>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span className="text-3xl font-bold text-gray-900">
+                      ৳ {selectedVariant ? Number(selectedVariant.price).toLocaleString() : Number(product.price).toLocaleString()}
+                    </span>
                     {discountPercent > 0 && (
                       <span className="bg-[#ccfccb] text-[#0f5132] px-3 py-1 rounded-full text-sm font-bold">
                         {discountPercent}% off
                       </span>
                     )}
-                    {product.original_price > product.price && (
+                    {product.original_price > (selectedVariant?.price || product.price) && (
                       <span className="text-gray-400 line-through text-lg">৳{Number(product.original_price).toLocaleString()}</span>
                     )}
 
-                    {product.stock > 0 ? (
-                      <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">In Stock</span>
+                    {(selectedVariant ? selectedVariant.stock : product.stock) > 0 ? (
+                      <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
+                        In Stock ({selectedVariant ? selectedVariant.stock : product.stock})
+                      </span>
                     ) : (
                       <span className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-bold">Out of Stock</span>
                     )}
-
-                    <span className="text-gray-500 text-sm ml-auto">Code: <span className="text-gray-900 font-medium">{product.sku || 'N/A'}</span></span>
                   </div>
                 </div>
 
                 {/* Selectors */}
                 {/* Dynamic Options */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {parsedOptions.map((option, idx) => (
                     <div key={idx}>
                       <h3 className="font-bold text-gray-900 mb-3">{option.name}</h3>
@@ -222,9 +316,6 @@ export default function ProductDetail({ params }) {
                       </div>
                     </div>
                   ))}
-                  {parsedOptions.length === 0 && (
-                    <p className="text-gray-500">No options available</p>
-                  )}
                 </div>
 
                 {/* Actions */}
@@ -258,19 +349,161 @@ export default function ProductDetail({ params }) {
             </div>
           </div>
 
-          {/* Related Products */}
-          {relatedProducts.length > 0 && (
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Info</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {relatedProducts.slice(0, 4).map((relatedProduct) => (
-                  <ProductCard key={relatedProduct.id} product={relatedProduct} />
-                ))}
+          {/* Bottom Part */}
+          <div className="grid lg:grid-cols-4 gap-8 mb-12">
+            {/* Details Section */}
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                {(() => {
+                  const tabs = [
+                    { id: 'description', label: 'Details', content: product.description },
+                    { id: 'specifications', label: 'Specifications', content: product.specifications },
+                    { id: 'features', label: 'Features', content: product.features },
+                  ].filter(tab => tab.content);
+
+                  if (tabs.length === 0) return null;
+
+                  // Ensure active tab is valid
+                  const currentTab = tabs.find(t => t.id === activeTab) ? activeTab : tabs[0].id;
+
+                  return (
+                    <div>
+                      <div className="flex flex-wrap gap-8 border-b border-gray-100 mb-8">
+                        {tabs.map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`pb-4 text-lg font-bold border-b-2 transition-colors relative ${currentTab === tab.id
+                              ? 'text-orange-500 border-orange-500'
+                              : 'text-gray-400 border-transparent hover:text-gray-600'
+                              }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="prose prose-stone max-w-none">
+                        {(() => {
+                          const tab = tabs.find(t => t.id === currentTab);
+                          if (!tab) return null;
+
+                          if (tab.id === 'specifications') {
+                            try {
+                              const specs = typeof tab.content === 'string' ? JSON.parse(tab.content) : tab.content;
+
+                              // Handle Key-Value Object
+                              if (typeof specs === 'object' && specs !== null && !Array.isArray(specs)) {
+                                return (
+                                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <tbody className="divide-y divide-gray-200 bg-white">
+                                        {Object.entries(specs).map(([key, value], idx) => (
+                                          <tr key={key} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                                            <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              }
+                              // Handle Array of Objects (if applicable, e.g. [{name: 'Weight', value: '1kg'}])
+                              if (Array.isArray(specs)) {
+                                return (
+                                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <tbody className="divide-y divide-gray-200 bg-white">
+                                        {specs.map((item, idx) => {
+                                          const key = item.name || item.key || item.label || Object.keys(item)[0];
+                                          const value = item.value || item.content || Object.values(item)[0];
+                                          return (
+                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                                              <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
+                                              <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              }
+                            } catch (e) {
+                              console.log('Failed to parse specifications JSON', e);
+                            }
+                          }
+
+                          return <div dangerouslySetInnerHTML={{ __html: tab.content }} />;
+                        })()}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
-            </section>
-          )}
+            </div>
+
+            <div className="lg:col-span-1">
+              {relatedProducts.length > 0 && (
+                <section>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+                  <div className="relative group">
+                    <Swiper
+                      modules={[Autoplay, Navigation]}
+                      spaceBetween={20}
+                      slidesPerView={1.2}
+                      autoplay={{
+                        delay: 3000,
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: true
+                      }}
+                      navigation={{
+                        prevEl: '.custom-swiper-button-prev',
+                        nextEl: '.custom-swiper-button-next',
+                      }}
+                      breakpoints={{
+                        640: {
+                          slidesPerView: 2.2,
+                        },
+                        1024: {
+                          slidesPerView: 1,
+                        }
+                      }}
+                      className="related-products-slider"
+                    >
+                      {relatedProducts.slice(0, 6).map((relatedProduct) => (
+                        <SwiperSlide key={relatedProduct.id}>
+                          <div className="h-full">
+                            <ProductCard product={relatedProduct} />
+                          </div>
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
+
+                    {/* Custom Navigation */}
+                    <div className="flex items-center justify-center gap-4 mt-4">
+                      <button className="custom-swiper-button-prev w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:border-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <ArrowLeft size={20} />
+                      </button>
+                      <button className="custom-swiper-button-next w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:border-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <ArrowRight size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+          </div>
         </div>
       </main>
+
+      <ImageLightbox
+        images={images}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        initialIndex={selectedImage}
+      />
 
       <Footer />
     </>

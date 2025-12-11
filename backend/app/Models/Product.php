@@ -22,6 +22,8 @@ class Product extends Model
         'brand_id',
         'is_featured',
         'is_new',
+        'featured_order',
+        'new_arrival_order',
         'is_active',
         'options',
     ];
@@ -50,5 +52,10 @@ class Product extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
     }
 }

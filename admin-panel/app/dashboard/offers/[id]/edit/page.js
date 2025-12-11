@@ -5,30 +5,22 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import api from '@/app/lib/api';
-import ImagePicker from '@/app/components/ImagePicker';
+import ImageUpload from '@/app/components/ImageUpload';
 
 export default function EditOfferPage({ params }) {
     const router = useRouter();
-    // In Next.js 15+ params is a Promise. Resolve it.
-    // However, depending on version it might differ. Assuming Promise pattern or use() hook.
-    // For now, using standard Promise resolution in useEffect to be safe.
-
-    // Actually, React.use() is preferred if checking recent Next.js docs, but let's stick to useEffect for broad compatibility or if uncertain.
-    // Simplest approach: params is a prop, if it's a promise, we await it.
-
     const [id, setId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [products, setProducts] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
-        image: '',
+        image: '', // Can be URL string or File object
         product_id: '',
         is_active: true,
     });
 
     useEffect(() => {
-        // Resolve params
         Promise.resolve(params).then(p => {
             setId(p.id);
             fetchInitialData(p.id);
@@ -39,10 +31,10 @@ export default function EditOfferPage({ params }) {
         try {
             const [offerRes, productsRes] = await Promise.all([
                 api.get(`/offers/${offerId}`),
-                api.get('/products') // Assuming /products returns list
+                api.get('/products')
             ]);
 
-            const offer = offerRes.data.data || offerRes.data; // Handle potential API resource wrapper
+            const offer = offerRes.data.data || offerRes.data;
             const productList = productsRes.data.data || productsRes.data;
 
             setProducts(productList);
@@ -54,6 +46,7 @@ export default function EditOfferPage({ params }) {
             });
         } catch (error) {
             console.error('Error fetching data:', error);
+            // toast.error is better but alert is in original code
             alert('Failed to load offer data');
             router.push('/dashboard/offers');
         } finally {
@@ -66,7 +59,39 @@ export default function EditOfferPage({ params }) {
         setLoading(true);
 
         try {
-            await api.put(`/offers/${id}`, formData);
+            // Check if image is a File object (new upload) or string (existing URL)
+            // If it's a file, we need to upload it first or send as FormData.
+            // Backend `OfferController` usually expects JSON or maybe it handles multipart?
+            // If standard Laravel resource controller, `update` typically expects data.
+            // Let's assume we need to send multipart/form-data if there is a new file.
+
+            const data = new FormData();
+            data.append('title', formData.title);
+            data.append('product_id', formData.product_id);
+            data.append('is_active', formData.is_active ? '1' : '0');
+
+            if (formData.image instanceof File) {
+                data.append('image', formData.image);
+            } else if (typeof formData.image === 'string') {
+                // If it's a string, we might not need to send it if backend ignores missing 'image' key,
+                // OR we send it as 'image_url' if backend supports it.
+                // Or maybe backend expects 'image' to be null if not updating?
+                // Let's just NOT append 'image' if it's the existing URL string, 
+                // UNLESS backend requires it to not delete the old one.
+                // Safer: don't append if it's a string (no change).
+                // But wait, if backend expects 'image' field to update...
+                // Usually: if (hasFile('image')) update it.
+            }
+
+            // PUT requests with FormData in Laravel/PHP can be tricky (method spoofing).
+            data.append('_method', 'PUT');
+
+            await api.post(`/offers/${id}`, data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            // await api.put(`/offers/${id}`, formData); // Old JSON way
+
             router.push('/dashboard/offers');
             router.refresh();
         } catch (error) {
@@ -116,9 +141,10 @@ export default function EditOfferPage({ params }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Image
                     </label>
-                    <ImagePicker
+                    <ImageUpload
                         value={formData.image}
-                        onChange={(url) => setFormData({ ...formData, image: url })}
+                        onChange={(file) => setFormData({ ...formData, image: file })}
+                        helpText="Recommended size: 800x600px"
                     />
                 </div>
 

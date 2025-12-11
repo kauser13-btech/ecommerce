@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '../../lib/api';
-import { Plus, Pencil, Trash2, Search, Loader2, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Loader2, Tag, Check, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
@@ -29,6 +29,22 @@ export default function PromoCodesPage() {
             toast.error('Failed to load promo codes');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleToggleStatus = async (promo) => {
+        try {
+            // Optimistic update
+            const updatedPromo = { ...promo, is_active: !promo.is_active };
+            setPromoCodes(promoCodes.map(p => p.id === promo.id ? updatedPromo : p));
+
+            await api.put(`/promocodes/${promo.id}`, updatedPromo);
+            toast.success(updatedPromo.is_active ? 'Promo code activated' : 'Promo code deactivated');
+        } catch (error) {
+            console.error('Error updating status:', error);
+            toast.error('Failed to update status');
+            // Revert on error
+            setPromoCodes(promoCodes.map(p => p.id === promo.id ? promo : p));
         }
     };
 
@@ -116,7 +132,6 @@ export default function PromoCodesPage() {
                                 <th className="px-6 py-3">Discount</th>
                                 <th className="px-6 py-3">Min Order</th>
                                 <th className="px-6 py-3">Expires At</th>
-                                <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -140,14 +155,15 @@ export default function PromoCodesPage() {
                                     <td className="px-6 py-4">
                                         {promo.expires_at ? new Date(promo.expires_at).toLocaleDateString() : 'Never'}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${promo.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                            {promo.is_active ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleToggleStatus(promo)}
+                                                className={`p-2 rounded-full transition-colors ${promo.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                                                title={promo.is_active ? "Active" : "Inactive"}
+                                            >
+                                                {promo.is_active ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                                            </button>
                                             <Link
                                                 href={`/dashboard/promocodes/${promo.id}`}
                                                 className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"

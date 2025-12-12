@@ -440,62 +440,6 @@ export default function ProductForm({ initialData, isEdit }) {
                         </div>
                     </div>
 
-
-                    {/* Variations */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-lg font-semibold text-gray-900">Variations</h3>
-                            <button
-                                type="button"
-                                onClick={handleAddOption}
-                                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                            >
-                                <Plus className="w-4 h-4" /> Add
-                            </button>
-                        </div>
-
-                        <div className="space-y-3">
-                            {options.map((option, index) => (
-                                <div key={index} className="bg-gray-50 p-3 rounded-lg space-y-2 relative group">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveOption(index)}
-                                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                    <input
-                                        type="text"
-                                        placeholder="Name (e.g. Color)"
-                                        value={option.name}
-                                        onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
-                                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Values (comma separated)"
-                                        value={option.values.join(', ')}
-                                        onChange={(e) => handleOptionChange(index, 'values', e.target.value)}
-                                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                            ))}
-                            {options.length === 0 && (
-                                <p className="text-sm text-gray-500 italic text-center py-2">No variations added</p>
-                            )}
-
-                            {options.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={generateVariants}
-                                    className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors mt-4"
-                                >
-                                    Generate Variants from Options
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
                     {/* Generated Variants List */}
                     {variants.length > 0 && (
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
@@ -600,7 +544,39 @@ export default function ProductForm({ initialData, isEdit }) {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
                         <h3 className="text-lg font-semibold text-gray-900">Pricing & Inventory</h3>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select
+                                    name="category_id"
+                                    value={formData.category_id}
+                                    onChange={handleChange}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                                <select
+                                    name="brand_id"
+                                    value={formData.brand_id}
+                                    onChange={handleChange}
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                >
+                                    <option value="">Select Brand</option>
+                                    {brands.map(b => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                                 <input
@@ -622,6 +598,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
+
                         </div>
 
                         <div>
@@ -677,45 +654,61 @@ export default function ProductForm({ initialData, isEdit }) {
                         </div>
                     </div>
 
-
-                    {/* Organization */}
+                    {/* Variations */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Organization</h3>
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-semibold text-gray-900">Variations</h3>
+                            <button
+                                type="button"
+                                onClick={handleAddOption}
+                                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                            >
+                                <Plus className="w-4 h-4" /> Add
+                            </button>
+                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                <select
-                                    name="category_id"
-                                    value={formData.category_id}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                        <div className="space-y-3">
+                            {options.map((option, index) => (
+                                <div key={index} className="bg-gray-50 p-3 rounded-lg space-y-2 relative group">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveOption(index)}
+                                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                    <input
+                                        type="text"
+                                        placeholder="Name (e.g. Color)"
+                                        value={option.name}
+                                        onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
+                                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Values (comma separated)"
+                                        value={option.values.join(', ')}
+                                        onChange={(e) => handleOptionChange(index, 'values', e.target.value)}
+                                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            ))}
+                            {options.length === 0 && (
+                                <p className="text-sm text-gray-500 italic text-center py-2">No variations added</p>
+                            )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                                <select
-                                    name="brand_id"
-                                    value={formData.brand_id}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    required
+                            {options.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={generateVariants}
+                                    className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors mt-4"
                                 >
-                                    <option value="">Select Brand</option>
-                                    {brands.map(b => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                                    Generate Variants from Options
+                                </button>
+                            )}
                         </div>
                     </div>
+
                 </div>
             </div>
 

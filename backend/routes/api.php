@@ -25,6 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Welcome to Admin Dashboard']);
         });
+        
+        // Manage Admin Users
+        Route::apiResource('users', \App\Http\Controllers\Api\AdminUserController::class);
+        Route::post('/users/{id}/verify', [\App\Http\Controllers\Api\AdminUserController::class, 'verify']);
+        Route::post('/users/{id}/send-otp', [\App\Http\Controllers\Api\AdminUserController::class, 'sendUserOtp']);
+        Route::post('/users/{id}/verify-otp', [\App\Http\Controllers\Api\AdminUserController::class, 'verifyUserOtp']);
+        Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Api\AdminUserController::class, 'resetPassword']);
+        Route::post('/email/send-otp', [\App\Http\Controllers\Api\AdminUserController::class, 'sendOtp']);
+        Route::post('/email/verify-otp', [\App\Http\Controllers\Api\AdminUserController::class, 'verifyOtp']);
     });
 });
 

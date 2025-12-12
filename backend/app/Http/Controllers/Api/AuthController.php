@@ -73,7 +73,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! $user->isAdmin()) {
+        if (! $user->hasDashboardAccess()) {
             return response()->json(['message' => 'Unauthorized. Admin access only.'], 403);
         }
 

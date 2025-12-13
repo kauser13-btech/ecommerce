@@ -41,8 +41,9 @@ export default function ProductCard({ product }) {
         {/* Add to Cart Button - Visible on Hover (Desktop) / Always (Mobile) */}
         <button
           onClick={handleAddToCart}
-          className="absolute bottom-3 right-3 bg-black text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20 hover:bg-gray-800"
-          title="Add to Cart"
+          disabled={product.stock <= 0}
+          className="absolute bottom-3 right-3 bg-black text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-black"
+          title={product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

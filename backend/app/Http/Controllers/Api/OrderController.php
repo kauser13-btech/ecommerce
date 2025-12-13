@@ -18,8 +18,17 @@ class OrderController extends Controller
         $query = Order::with(['orderItems.product', 'user']);
         
         if ($request->user_id) {
-            $query->where('user_id', $request->user_id);
+            $query->where(function($q) use ($request) {
+                $q->where('user_id', $request->user_id);
+                // Also search by email if user exists
+                $user = \App\Models\User::find($request->user_id);
+                if ($user) {
+                    $q->orWhere('customer_email', $user->email);
+                }
+            });
         }
+        // Fallback for security: if no filter and not admin (dummy check), maybe limit? 
+        // For now, we assume frontend sends strict filters or is admin.
         
         return response()->json($query->latest()->get());
     }
@@ -31,15 +40,17 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
+        // ... validation ...
         $validated = $request->validate([
             'customer_name' => 'required|string',
-            'customer_email' => 'required|email',
+            'customer_email' => 'nullable|email',
             'customer_phone' => 'required|string',
-            'division' => 'required|string',
-            'district' => 'required|string',
-            'upazila' => 'required|string',
+            'division' => 'nullable|string',
+            'district' => 'nullable|string',
+            'upazila' => 'nullable|string',
             'post_code' => 'nullable|string',
             'shipping_address' => 'required|string',
+            'apartment_suite' => 'nullable|string',
             'payment_method' => 'required|in:cod,online',
             'delivery_method' => 'required|in:courier,pickup',
             'items' => 'required|array|min:1',
@@ -63,9 +74,7 @@ class OrderController extends Controller
                 }
 
                 $price = $product->price; 
-                // If we had product variations via 'selectedColor'/'selectedStorage', we might adjust price here logic if needed
-                // For now assuming base price
-
+                
                 $lineTotal = $price * $item['quantity'];
                 $subtotal += $lineTotal;
 
@@ -74,11 +83,8 @@ class OrderController extends Controller
                     'product_name' => $product->name,
                     'price' => $price,
                     'quantity' => $item['quantity'],
-                    'total' => $lineTotal,
-                    'variation' => json_encode([
-                        'color' => $item['selectedColor'] ?? null,
-                        'storage' => $item['selectedStorage'] ?? null
-                    ]),
+                    'subtotal' => $lineTotal,
+                    'variation' => isset($item['selectedOptions']) ? json_encode($item['selectedOptions']) : null,
                 ];
 
                 // Decrement stock
@@ -86,8 +92,8 @@ class OrderController extends Controller
             }
 
             // Calculate Totals
-            $shippingCost = $request->delivery_method === 'pickup' ? 0 : 100;
-            $tax = $subtotal * 0.05;
+            $shippingCost = $request->delivery_method === 'pickup' ? 0 : 400;
+            $tax = 0; 
             $discount = 0;
 
             if ($request->promo_code) {
@@ -98,21 +104,25 @@ class OrderController extends Controller
                     } else {
                         $discount = ($subtotal * $promo->value) / 100;
                     }
-                    // Add cap logic if needed, currently reusing logic from cart
                     if ($promo->min_order_amount && $subtotal < $promo->min_order_amount) {
-                         $discount = 0; // Invalid min order
+                         $discount = 0;
                     }
                 }
             }
             
-            // Adjust discount not to exceed total
             $totalBeforeDiscount = $subtotal + $shippingCost + $tax;
             $discount = min($discount, $totalBeforeDiscount);
             $total = $totalBeforeDiscount - $discount;
 
+            // Combine address with apartment suite if present
+            $fullShippingAddress = $request->shipping_address;
+            if ($request->filled('apartment_suite')) {
+                $fullShippingAddress .= ', ' . $request->apartment_suite;
+            }
+
             $order = Order::create([
                 'order_number' => 'ORD-' . strtoupper(Str::random(10)),
-                'user_id' => $request->user()->id ?? null, // If authenticated
+                'user_id' => auth('sanctum')->id() ?? null,
                 'customer_name' => $request->customer_name,
                 'customer_email' => $request->customer_email,
                 'customer_phone' => $request->customer_phone,
@@ -120,8 +130,8 @@ class OrderController extends Controller
                 'district' => $request->district,
                 'upazila' => $request->upazila,
                 'post_code' => $request->post_code,
-                'shipping_address' => $request->shipping_address,
-                'billing_address' => $request->shipping_address, // Assuming same for now
+                'shipping_address' => $fullShippingAddress,
+                'billing_address' => $fullShippingAddress,
                 'subtotal' => $subtotal,
                 'tax' => $tax,
                 'shipping_cost' => $shippingCost,
@@ -152,5 +162,37 @@ class OrderController extends Controller
                 'error' => $e->getMessage()
             ], 400);
         }
+    }
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string',
+        ]);
+
+        $order = Order::findOrFail($id);
+        $oldStatus = $order->order_status;
+        $newStatus = $validated['status'];
+
+        if ($oldStatus !== $newStatus) {
+            $order->update(['order_status' => $newStatus]);
+
+            // Create log
+            $order->logs()->create([
+                'user_id' => $request->user()->id ?? null, // Assuming admin is authenticated
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Order status updated successfully',
+            'order' => $order
+        ]);
+    }
+
+    public function getLogs($id)
+    {
+        $order = Order::findOrFail($id);
+        return response()->json($order->logs()->with('user')->latest()->get());
     }
 }

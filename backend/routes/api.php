@@ -76,4 +76,7 @@ Route::apiResource('offers', App\Http\Controllers\Api\OfferController::class);
 Route::post('offers/reorder', [App\Http\Controllers\Api\OfferController::class, 'reorder']);
 
 // Orders (protected routes would use auth:sanctum middleware)
+// Orders (protected routes would use auth:sanctum middleware)
 Route::apiResource('orders', OrderController::class);
+Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+Route::get('/orders/{id}/logs', [OrderController::class, 'getLogs']);

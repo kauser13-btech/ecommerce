@@ -19,11 +19,10 @@ export default function MyOrdersPage() {
         async function fetchOrders() {
             try {
                 if (user) {
-                    // const response = await api.get('/orders');
-                    // setOrders(response.data);
-                    // Simulated delay
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    setOrders([]);
+                    const response = await api.get('/orders', {
+                        params: { user_id: user.id }
+                    });
+                    setOrders(response.data);
                 }
             } catch (error) {
                 console.error('Failed to fetch orders', error);
@@ -84,18 +83,54 @@ export default function MyOrdersPage() {
                                             <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                order.status === 'processing' ? 'bg-blue-100 text-blue-700' :
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${order.order_status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                order.order_status === 'processing' ? 'bg-blue-100 text-blue-700' :
                                                     'bg-gray-100 text-gray-700'
                                                 }`}>
-                                                {order.status}
+                                                {order.order_status}
                                             </span>
-                                            <span className="font-bold text-gray-900">৳{order.total_amount}</span>
+                                            <span className="font-bold text-gray-900">৳{Number(order.total).toLocaleString()}</span>
                                         </div>
                                     </div>
                                     <div className="p-6">
-                                        {/* Order items would go here */}
-                                        <p className="text-sm text-gray-500">Items...</p>
+                                        <div className="space-y-4">
+                                            {order.order_items?.map((item, idx) => (
+                                                <div key={idx} className="flex gap-4 items-center">
+                                                    <div className="h-16 w-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                                        {item.product?.image ? (
+                                                            <img src={item.product.image} alt={item.product_name} className="h-full w-full object-cover" />
+                                                        ) : (
+                                                            <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                                                <Package className="h-6 w-6" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-medium text-gray-900">{item.product_name}</h4>
+                                                        <div className="flex text-sm text-gray-500 mt-1 gap-4">
+                                                            <span>Qty: {item.quantity}</span>
+                                                            <span>৳{Number(item.price).toLocaleString()}</span>
+                                                        </div>
+                                                        {item.variation && (
+                                                            <p className="text-xs text-gray-400 mt-1">
+                                                                {typeof item.variation === 'string'
+                                                                    ? (() => {
+                                                                        try {
+                                                                            const v = JSON.parse(item.variation);
+                                                                            return Object.values(v).join(' / ');
+                                                                        } catch (e) { return item.variation }
+                                                                    })()
+                                                                    : Object.values(item.variation || {}).join(' / ')
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="font-medium text-gray-900">
+                                                        ৳{Number(item.subtotal || item.total).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             ))}

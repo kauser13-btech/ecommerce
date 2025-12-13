@@ -25,7 +25,7 @@ export default function ProductDetail({ params }) {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [parsedOptions, setParsedOptions] = useState([]);
 
-  const { addToCart } = useCart();
+  const { addToCart, toggleCart } = useCart();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
 
@@ -178,7 +178,7 @@ export default function ProductDetail({ params }) {
       quantity,
       selectedOptions
     });
-    window.location.href = '/cart';
+    toggleCart();
   };
 
 
@@ -284,11 +284,7 @@ export default function ProductDetail({ params }) {
                       <span className="text-gray-400 line-through text-lg">৳{Number(product.original_price).toLocaleString()}</span>
                     )}
 
-                    {(selectedVariant ? selectedVariant.stock : product.stock) > 0 ? (
-                      <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
-                        In Stock ({selectedVariant ? selectedVariant.stock : product.stock})
-                      </span>
-                    ) : (
+                    {(selectedVariant ? selectedVariant.stock : product.stock) <= 0 && (
                       <span className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-bold">Out of Stock</span>
                     )}
                   </div>
@@ -323,22 +319,32 @@ export default function ProductDetail({ params }) {
                   <h3 className="font-bold text-gray-900 mb-4">Select Quantity</h3>
                   <div className="flex flex-wrap gap-4">
                     <div className="flex items-center bg-white border border-gray-200 rounded-full px-2">
-                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg">-</button>
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
+                        disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                      >-</button>
                       <span className="w-8 text-center font-semibold">{quantity}</span>
-                      <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg">+</button>
+                      <button
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
+                        disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                      >+</button>
                     </div>
 
                     <button
                       onClick={handleBuyNow}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                      disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
                     >
-                      Buy Now
+                      {(selectedVariant ? selectedVariant.stock : product.stock) <= 0 ? 'Out of Stock' : 'Buy Now'}
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                     </button>
 
                     <button
                       onClick={handleAddToCart}
-                      className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors"
+                      disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                      className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                     >
                       Add to Cart
                     </button>

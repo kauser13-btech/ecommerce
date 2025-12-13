@@ -13,15 +13,9 @@ export default function CartModal() {
         removeFromCart,
         getCartTotal,
         isCartOpen,
-        toggleCart,
-        applyPromo,
-        removePromo,
-        promoCode,
-        discountAmount
+        toggleCart
     } = useCart();
     const router = useRouter();
-
-    const [code, setCode] = useState('');
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -29,7 +23,6 @@ export default function CartModal() {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
-            setCode(''); // Reset code input
         }
         return () => {
             document.body.style.overflow = 'unset';
@@ -148,34 +141,6 @@ export default function CartModal() {
                                 ))}
                             </div>
 
-                            {/* Promo Code */}
-                            <div className="pt-4 border-t border-gray-100">
-                                {!promoCode ? (
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Promo Code"
-                                            value={code}
-                                            onChange={(e) => setCode(e.target.value)}
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 pr-20"
-                                        />
-                                        <button
-                                            onClick={() => applyPromo(code)}
-                                            className="absolute right-1.5 top-1.5 bg-gray-900 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-800 transition-colors"
-                                        >
-                                            Apply
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="bg-green-50 border border-green-100 rounded-lg p-3 flex items-center justify-between text-sm text-green-800">
-                                        <span className="flex items-center gap-2">
-                                            <span className="font-semibold">{promoCode.code}</span> applied
-                                        </span>
-                                        <button onClick={removePromo} className="text-red-500 hover:text-red-700 text-xs font-medium">Remove</button>
-                                    </div>
-                                )}
-                            </div>
-
                             {/* Summary */}
                             <div className="space-y-3 pt-4 border-t border-gray-100 text-sm">
                                 <div className="flex justify-between text-gray-600">
@@ -190,15 +155,9 @@ export default function CartModal() {
                                     <span>Tax (5%)</span>
                                     <span>৳{tax.toLocaleString()}</span>
                                 </div>
-                                {promoCode && (
-                                    <div className="flex justify-between text-green-600 font-medium">
-                                        <span>Discount</span>
-                                        <span>-৳{discountAmount.toLocaleString()}</span>
-                                    </div>
-                                )}
                                 <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t border-dashed border-gray-200">
                                     <span>Total</span>
-                                    <span className="text-orange-600">৳{(total - discountAmount).toLocaleString()}</span>
+                                    <span className="text-orange-600">৳{total.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>

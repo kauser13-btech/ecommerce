@@ -93,8 +93,8 @@ export default function CategoriesPage() {
                         <thead className="bg-gray-50 text-gray-500 font-medium">
                             <tr>
                                 <th className="px-6 py-3">Name</th>
-                                <th className="px-6 py-3">Slug</th>
                                 <th className="px-6 py-3">Parent Category</th>
+                                <th className="px-6 py-3">Slug</th>
                                 <th className="px-6 py-3 text-right sticky right-0 bg-gray-50 z-10 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]">Actions</th>
                             </tr>
                         </thead>
@@ -102,7 +102,6 @@ export default function CategoriesPage() {
                             {categories.map((category) => (
                                 <tr key={category.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-medium text-gray-900">{category.name}</td>
-                                    <td className="px-6 py-4 text-gray-500">{category.slug}</td>
                                     <td className="px-6 py-4 text-gray-500">
                                         {category.parent ? (
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -112,6 +111,7 @@ export default function CategoriesPage() {
                                             <span className="text-gray-400 italic">None</span>
                                         )}
                                     </td>
+                                    <td className="px-6 py-4 text-gray-500">{category.slug}</td>
                                     <td className="px-6 py-4 text-right sticky right-0 bg-white group-hover:bg-gray-50 z-10 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]">
                                         <div className="flex items-center justify-end gap-2">
                                             <Link

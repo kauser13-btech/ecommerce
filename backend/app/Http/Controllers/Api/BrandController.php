@@ -22,12 +22,17 @@ class BrandController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:brands',
-            'logo' => 'nullable|string',
+            'logo' => 'nullable', // Allow file or string
             'is_active' => 'boolean',
         ]);
 
         if (empty($validated['slug'])) {
             $validated['slug'] = \Illuminate\Support\Str::slug($validated['name']);
+        }
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('brands', 'public');
+            $validated['logo'] = '/storage/' . $path;
         }
 
         $brand = Brand::create($validated);
@@ -62,15 +67,18 @@ class BrandController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:brands,slug,' . $id,
-            'logo' => 'nullable|string',
+            'slug' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::unique('brands')->ignore($brand->id)],
+            'logo' => 'nullable', // Allow string or file
             'is_active' => 'boolean',
         ]);
 
         if (isset($validated['name']) && empty($validated['slug']) && $brand->slug === \Illuminate\Support\Str::slug($brand->name)) {
-             // Only auto-update slug if it wasn't manually set? 
-             // Simplification: if slug is passed as null, maybe re-generate? 
-             // Admin panel passes existing slug. 
+             // ...
+        }
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('brands', 'public');
+            $validated['logo'] = '/storage/' . $path;
         }
 
         $brand->update($validated);

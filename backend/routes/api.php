@@ -76,7 +76,20 @@ Route::apiResource('offers', App\Http\Controllers\Api\OfferController::class);
 Route::post('offers/reorder', [App\Http\Controllers\Api\OfferController::class, 'reorder']);
 
 // Orders (protected routes would use auth:sanctum middleware)
-// Orders (protected routes would use auth:sanctum middleware)
 Route::apiResource('orders', OrderController::class);
 Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::get('/orders/{id}/logs', [OrderController::class, 'getLogs']);
+
+// Menu
+Route::get('/menu', [App\Http\Controllers\Api\MenuController::class, 'index']);
+
+// Admin Menu Management (should be protected, adding here for now to match other patterns or inside admin group)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->prefix('admin')->group(function () {
+        Route::get('/menu', [App\Http\Controllers\Api\MenuController::class, 'adminIndex']);
+        Route::post('/menu', [App\Http\Controllers\Api\MenuController::class, 'store']);
+        Route::put('/menu/{id}', [App\Http\Controllers\Api\MenuController::class, 'update']);
+        Route::delete('/menu/{id}', [App\Http\Controllers\Api\MenuController::class, 'destroy']);
+        Route::post('/menu/reorder', [App\Http\Controllers\Api\MenuController::class, 'reorder']);
+    });
+});

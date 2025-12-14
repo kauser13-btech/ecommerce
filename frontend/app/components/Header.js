@@ -76,26 +76,20 @@ export default function Header() {
     }
   };
 
-  const navLinks = [
-    { name: 'HOME', href: '/' },
-    {
-      name: 'APPLE PRODUCTS',
-      href: '/products?category=apple',
-      submenu: [
-        { name: 'Apple MacBook', href: '/products?category=macbook' },
-        { name: 'Apple iPad', href: '/products?category=ipad' },
-        { name: 'Apple iPhone', href: '/products?category=iphone' },
-        { name: 'Apple Watch', href: '/products?category=watch' },
-        { name: 'Apple Mac Mini', href: '/products?category=mac-mini' },
-        { name: 'Apple iMac', href: '/products?category=imac' },
-        { name: 'Apple Mac Studio', href: '/products?category=mac-studio' },
-        { name: 'Apple Accessories', href: '/products?category=apple-accessories' },
-      ]
-    },
-    { name: 'MOBILE AND TABLETS', href: '/products?category=mobile-tablets' },
-    { name: 'ACCESSORIES', href: '/products?category=accessories' },
-    { name: 'CONTACT US', href: '/contact-us' },
-  ];
+  const [menus, setMenus] = useState([]);
+
+  useEffect(() => {
+    async function fetchMenu() {
+      try {
+        const response = await api.get('/menu');
+        setMenus(response.data);
+      } catch (error) {
+        console.error('Failed to fetch menu:', error);
+        // Fallback could go here if needed
+      }
+    }
+    fetchMenu();
+  }, []);
 
   return (
     <header
@@ -150,29 +144,29 @@ export default function Header() {
 
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex gap-8">
-            {navLinks.map((link) => (
-              <div key={link.name} className="relative group h-full flex items-center">
+            {menus.map((link) => (
+              <div key={link.id} className="relative group h-full flex items-center">
                 <Link
-                  href={link.href}
+                  href={link.url || '#'}
                   className="text-sm font-bold text-gray-800 hover:text-orange-600 transition-all duration-300 py-2 flex items-center gap-1 uppercase tracking-wide relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-orange-600 after:transition-all after:duration-300 group-hover:after:w-full"
                 >
-                  {link.name}
-                  {link.submenu && (
+                  {link.title}
+                  {link.children && link.children.length > 0 && (
                     <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
                   )}
                 </Link>
 
                 {/* Submenu */}
-                {link.submenu && (
+                {link.children && link.children.length > 0 && (
                   <div className="absolute top-full left-0 w-64 bg-white shadow-xl rounded-b-xl border-t-2 border-orange-500 py-2 hidden group-hover:block animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="flex flex-col p-1">
-                      {link.submenu.map((subLink) => (
+                      {link.children.map((subLink) => (
                         <Link
-                          key={subLink.name}
-                          href={subLink.href}
+                          key={subLink.id}
+                          href={subLink.url || '#'}
                           className="px-4 py-3 text-sm font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all duration-200"
                         >
-                          {subLink.name}
+                          {subLink.title}
                         </Link>
                       ))}
                     </div>
@@ -336,15 +330,31 @@ export default function Header() {
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg py-4 px-4 flex flex-col gap-4">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="text-base font-medium text-gray-700 hover:text-black py-2 border-b border-gray-100 last:border-0"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {link.name}
-            </Link>
+          {menus.map((link) => (
+            <div key={link.id}>
+              <Link
+                href={link.url || '#'}
+                className="text-base font-medium text-gray-700 hover:text-black py-2 border-b border-gray-100 last:border-0 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {link.title}
+              </Link>
+              {/* Mobile Submenu - simplified for now */}
+              {link.children && link.children.length > 0 && (
+                <div className="pl-4 mt-2 border-l-2 border-gray-100">
+                  {link.children.map(subLink => (
+                    <Link
+                      key={subLink.id}
+                      href={subLink.url || '#'}
+                      className="block text-sm text-gray-500 py-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {subLink.title}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           <div className="pt-2 flex flex-col gap-3">
             {user ? (

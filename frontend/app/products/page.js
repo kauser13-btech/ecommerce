@@ -115,15 +115,24 @@ export default async function ProductsPage(props) {
                   </>
                 )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">
-                {search ? `Search results for "${search}"` :
-                  brand ? brands.find(b => b.slug === brand)?.name || brand :
+              {brand ? (
+                (() => {
+                  const currentBrand = brands.find(b => b.slug === brand);
+                  return currentBrand?.logo ? (
+                    <img src={currentBrand.logo} alt={currentBrand.name} className="h-12 w-auto object-contain mb-4" />
+                  ) : (
+                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">
+                      {currentBrand?.name || brand}
+                    </h1>
+                  );
+                })()
+              ) : (
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">
+                  {search ? `Search results for "${search}"` :
                     category ? categories.find(c => c.slug === category)?.name || category.replace('-', ' ') :
                       'All Products'}
-              </h1>
-              <p className="text-gray-500 text-lg">
-                Explore our collection of {meta?.total || 0} premium products
-              </p>
+                </h1>
+              )}
             </div>
           </div>
         </div>

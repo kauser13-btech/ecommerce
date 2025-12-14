@@ -69,8 +69,41 @@ export default function MenuManagement() {
         }
     };
 
-    const MenuItemNode = ({ item, level = 0 }) => {
+    const handleReorder = async (items) => {
+        try {
+            await api.post('/admin/menu/reorder', {
+                items: items.map((item, index) => ({
+                    id: item.id,
+                    order: index + 1,
+                    parent_id: item.parent_id
+                }))
+            });
+            fetchMenu();
+        } catch (error) {
+            console.error('Error reordering menu:', error);
+            toast.error('Failed to update order');
+        }
+    };
+
+    const moveItem = (item, direction, siblings) => {
+        const currentIndex = siblings.findIndex(i => i.id === item.id);
+        if (currentIndex === -1) return;
+
+        const newIndex = currentIndex + direction;
+        if (newIndex < 0 || newIndex >= siblings.length) return;
+
+        const newSiblings = [...siblings];
+        const [movedItem] = newSiblings.splice(currentIndex, 1);
+        newSiblings.splice(newIndex, 0, movedItem);
+
+        handleReorder(newSiblings);
+    };
+
+    const MenuItemNode = ({ item, level = 0, siblings = [] }) => {
         const [isExpanded, setIsExpanded] = useState(true);
+        const index = siblings.findIndex(s => s.id === item.id);
+        const isFirst = index === 0;
+        const isLast = index === siblings.length - 1;
 
         return (
             <div className="border border-gray-200 rounded-lg mb-2 bg-white overflow-hidden">
@@ -87,7 +120,26 @@ export default function MenuManagement() {
                         <div className="text-xs text-gray-500 truncate">{item.url}</div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 mr-4">
+                        <button
+                            onClick={() => moveItem(item, -1, siblings)}
+                            disabled={isFirst}
+                            className="p-1 text-gray-400 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Move Up"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                        </button>
+                        <button
+                            onClick={() => moveItem(item, 1, siblings)}
+                            disabled={isLast}
+                            className="p-1 text-gray-400 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Move Down"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 border-l pl-2 border-gray-200">
                         <button
                             onClick={() => handleOpenModal(item.id)}
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg text-xs font-medium flex items-center gap-1"
@@ -113,7 +165,7 @@ export default function MenuManagement() {
                 {isExpanded && item.children && item.children.length > 0 && (
                     <div className="pl-8 pr-2 pb-2">
                         {item.children.map(child => (
-                            <MenuItemNode key={child.id} item={child} level={level + 1} />
+                            <MenuItemNode key={child.id} item={child} level={level + 1} siblings={item.children} />
                         ))}
                     </div>
                 )}
@@ -141,7 +193,7 @@ export default function MenuManagement() {
 
             <div className="space-y-2">
                 {menuItems.map(item => (
-                    <MenuItemNode key={item.id} item={item} />
+                    <MenuItemNode key={item.id} item={item} siblings={menuItems} />
                 ))}
             </div>
 

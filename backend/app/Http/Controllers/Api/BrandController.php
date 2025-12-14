@@ -32,7 +32,7 @@ class BrandController extends Controller
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('brands', 'public');
-            $validated['logo'] = '/storage/' . $path;
+            $validated['logo'] = asset('storage/' . $path);
         }
 
         $brand = Brand::create($validated);
@@ -78,7 +78,7 @@ class BrandController extends Controller
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('brands', 'public');
-            $validated['logo'] = '/storage/' . $path;
+            $validated['logo'] = asset('storage/' . $path);
         }
 
         $brand->update($validated);

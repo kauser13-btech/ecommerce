@@ -88,55 +88,53 @@ export default function CategoriesPage() {
             />
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 text-gray-500 font-medium">
-                        <tr>
-                            <th className="px-6 py-3">Name</th>
-                            <th className="px-6 py-3">Slug</th>
-                            <th className="px-6 py-3">Parent Category</th>
-                            <th className="px-6 py-3">Description</th>
-                            <th className="px-6 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {categories.map((category) => (
-                            <tr key={category.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium text-gray-900">{category.name}</td>
-                                <td className="px-6 py-4 text-gray-500">{category.slug}</td>
-                                <td className="px-6 py-4 text-gray-500">
-                                    {category.parent ? (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {category.parent.name}
-                                        </span>
-                                    ) : (
-                                        <span className="text-gray-400 italic">None</span>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 text-gray-500 truncate max-w-xs" title={category.description}>
-                                    {category.description || '-'}
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <Link
-                                            href={`/dashboard/categories/${category.id}`}
-                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                            title="Edit Category"
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Link>
-                                        <button
-                                            onClick={() => confirmDelete(category)}
-                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Delete Category"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-gray-50 text-gray-500 font-medium">
+                            <tr>
+                                <th className="px-6 py-3">Name</th>
+                                <th className="px-6 py-3">Slug</th>
+                                <th className="px-6 py-3">Parent Category</th>
+                                <th className="px-6 py-3 text-right sticky right-0 bg-gray-50 z-10 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {categories.map((category) => (
+                                <tr key={category.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 font-medium text-gray-900">{category.name}</td>
+                                    <td className="px-6 py-4 text-gray-500">{category.slug}</td>
+                                    <td className="px-6 py-4 text-gray-500">
+                                        {category.parent ? (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {category.parent.name}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400 italic">None</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-right sticky right-0 bg-white group-hover:bg-gray-50 z-10 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <Link
+                                                href={`/dashboard/categories/${category.id}`}
+                                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                title="Edit Category"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Link>
+                                            <button
+                                                onClick={() => confirmDelete(category)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Category"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

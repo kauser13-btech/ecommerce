@@ -173,12 +173,42 @@ export default function ProductForm({ initialData, isEdit }) {
         }
     };
 
+    const [isSlugDirty, setIsSlugDirty] = useState(false);
+
+    const slugify = (text) => {
+        return text
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\w-]+/g, '')  // Remove all non-word chars
+            .replace(/--+/g, '-');    // Replace multiple - with single -
+    };
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+
+        // If user manually edits slug, mark it as dirty
+        if (name === 'slug') {
+            setIsSlugDirty(true);
+        }
+
+        setFormData(prev => {
+            const newData = {
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            };
+
+            // Auto-generate slug from name if:
+            // 1. We are changing the name
+            // 2. The slug hasn't been manually edited (isSlugDirty is false)
+            // 3. We are not in edit mode (optional, but usually safer to not change URLs of existing products)
+            if (name === 'name' && !isSlugDirty && !isEdit) {
+                newData.slug = slugify(value);
+            }
+
+            return newData;
+        });
     };
 
     const handleAddOption = () => {
@@ -364,13 +394,56 @@ export default function ProductForm({ initialData, isEdit }) {
                         <h3 className="text-lg font-semibold text-gray-900">Specifications</h3>
                         <div className="flex justify-between items-center mb-2">
                             <p className="text-sm text-gray-500">Technical details (e.g. Processor: Snapdragon)</p>
-                            <button
-                                type="button"
-                                onClick={() => setSpecs([...specs, { key: '', value: '' }])}
-                                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                            >
-                                <Plus className="w-4 h-4" /> Add Spec
-                            </button>
+                            <div className="flex gap-2">
+                                <label className="cursor-pointer text-sm text-gray-600 hover:text-black font-medium flex items-center gap-1">
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (!file) return;
+
+                                            const reader = new FileReader();
+                                            reader.onload = (event) => {
+                                                const csv = event.target.result;
+                                                const lines = csv.split('\n');
+                                                const newSpecs = [];
+
+                                                lines.forEach(line => {
+                                                    // Simple CSV parse: assume key,value format
+                                                    const [key, ...values] = line.split(',');
+                                                    if (key && values.length > 0) {
+                                                        const value = values.join(',').trim().replace(/^"|"$/g, ''); // Handle quoted values vaguely
+                                                        const cleanKey = key.trim().replace(/^"|"$/g, '');
+                                                        if (cleanKey) {
+                                                            newSpecs.push({ key: cleanKey, value: value });
+                                                        }
+                                                    }
+                                                });
+
+                                                setSpecs([...specs, ...newSpecs]);
+                                                // Sync immediately
+                                                const specsObj = [...specs, ...newSpecs].reduce((acc, curr) => {
+                                                    if (curr.key) acc[curr.key] = curr.value;
+                                                    return acc;
+                                                }, {});
+                                                setFormData(prev => ({ ...prev, specifications: JSON.stringify(specsObj) }));
+                                            };
+                                            reader.readAsText(file);
+                                            e.target.value = ''; // Reset input
+                                        }}
+                                    />
+                                    Import CSV
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setSpecs([...specs, { key: '', value: '' }])}
+                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                >
+                                    <Plus className="w-4 h-4" /> Add Spec
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-3">

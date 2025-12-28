@@ -52,44 +52,45 @@ export default function ShopByCategories() {
 
             <section className="max-w-7xl mx-auto px-4 py-10">
 
-                <div className="relative z-10">
-                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6 text-center">
-                        Shop by <span className="text-[#FF512F]">Categories</span>
+                <div className="text-center mb-10">
+                    <h2 className="text-3xl font-bold">
+                        <span className="text-black">Shop by</span> <span className="text-orange-500">Categories</span>
                     </h2>
-
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {categories.map((category, idx) => (
-                            <Link
-                                key={category.id}
-                                href={`/products?category=${category.slug}`}
-                                className={`group flex flex-col items-center gap-2 ${idx >= 6 ? 'hidden sm:flex' : 'flex'}`}
-                            >
-                                <div className="w-full aspect-square bg-white rounded-xl flex flex-col items-center justify-center p-3 transition-transform duration-300 shadow-sm hover:shadow-md hover:scale-105 border border-gray-100">
-                                    <div className="relative w-full h-full mb-2 transition-transform duration-300 group-hover:scale-110">
-                                        {category.image ? (
-                                            <Image
-                                                src={category.image}
-                                                alt={category.name}
-                                                fill
-                                                className="object-contain"
-                                                unoptimized
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">
-                                                📦
-                                            </div>
-                                        )}
-                                    </div>
-                                    <span className="text-[10px] md:text-xs font-semibold text-gray-800 text-center leading-tight line-clamp-2">
-                                        {category.name}
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
                 </div>
 
-            </section>
-        </div>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {categories.map((category, idx) => (
+                        <Link
+                            key={category.id}
+                            href={`/products?category=${category.slug}`}
+                            className={`group flex flex-col items-center gap-2 ${idx >= 6 ? 'hidden sm:flex' : 'flex'}`}
+                        >
+                            <div className="w-full aspect-square bg-white rounded-xl flex flex-col items-center justify-center p-3 transition-transform duration-300 shadow-sm hover:shadow-md hover:scale-105 border border-gray-100">
+                                <div className="relative w-full h-full mb-2 transition-transform duration-300 group-hover:scale-110">
+                                    {category.image ? (
+                                        <Image
+                                            src={category.image}
+                                            alt={category.name}
+                                            fill
+                                            className="object-contain"
+                                            unoptimized
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">
+                                            📦
+                                        </div>
+                                    )}
+                                </div>
+                                <span className="text-[10px] md:text-xs font-semibold text-gray-800 text-center leading-tight line-clamp-2">
+                                    {category.name}
+                                </span>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+
+
+            </section >
+        </div >
     );
 }

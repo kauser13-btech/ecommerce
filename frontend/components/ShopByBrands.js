@@ -46,9 +46,11 @@ export default function ShopByBrands() {
     return (
         <section className="w-full py-12 bg-white">
             <div className="max-w-7xl mx-auto px-4">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-                    Shop by <span className="text-blue-600">Brands</span>
-                </h2>
+                <div className="text-center mb-10">
+                    <h2 className="text-3xl font-bold">
+                        <span className="text-black">Shop by</span> <span className="text-orange-500">Brands</span>
+                    </h2>
+                </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
                     {brands.map((brand) => (

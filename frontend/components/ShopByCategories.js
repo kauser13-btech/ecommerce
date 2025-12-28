@@ -28,7 +28,8 @@ export default function ShopByCategories() {
 
     if (loading) {
         return (
-            <div className="bg-[url('/orange-bg.png')] bg-center bg-repeat-x w-full mt-12">
+            // <div className="bg-[url('/orange-bg.png')] bg-center bg-repeat-x w-full mt-12">
+            <div className="w-full mt-12">
                 <section className="max-w-7xl mx-auto px-4 py-10">
                     <div className="relative rounded-[2.5rem] overflow-hidden p-6 md:p-10 shadow-xl border border-white/40 bg-white/10 backdrop-blur-3xl">
                         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-10"></div>
@@ -46,7 +47,8 @@ export default function ShopByCategories() {
     if (categories.length === 0) return null;
 
     return (
-        <div className="bg-[url('/orange-bg.png')] bg-contain bg-center bg-repeat-x w-full mt-12">
+        // <div className="bg-[url('/orange-bg.png')] bg-contain bg-center bg-repeat-x w-full mt-12">
+        <div className="w-full mt-12">
 
             <section className="max-w-7xl mx-auto px-4 py-10">
 

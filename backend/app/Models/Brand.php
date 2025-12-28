@@ -12,6 +12,8 @@ class Brand extends Model
         'description',
         'logo',
         'is_active',
+        'show_on_home',
+        'sort_order',
     ];
 
     protected $casts = [

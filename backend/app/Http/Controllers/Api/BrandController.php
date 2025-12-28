@@ -8,11 +8,15 @@ use Illuminate\Http\Request;
 
 class BrandController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $brands = Brand::where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        $query = Brand::where('is_active', true);
+
+        if ($request->has('show_on_home')) {
+            $query->where('show_on_home', $request->boolean('show_on_home'));
+        }
+
+        $brands = $query->orderBy('sort_order', 'asc')->orderBy('name', 'asc')->get();
 
         return response()->json($brands);
     }
@@ -24,6 +28,8 @@ class BrandController extends Controller
             'slug' => 'nullable|string|max:255|unique:brands',
             'logo' => 'nullable', // Allow file or string
             'is_active' => 'boolean',
+            'show_on_home' => 'boolean',
+            'sort_order' => 'integer',
         ]);
 
         if (empty($validated['slug'])) {
@@ -70,6 +76,8 @@ class BrandController extends Controller
             'slug' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::unique('brands')->ignore($brand->id)],
             'logo' => 'nullable', // Allow string or file
             'is_active' => 'boolean',
+            'show_on_home' => 'boolean',
+            'sort_order' => 'integer',
         ]);
 
         if (isset($validated['name']) && empty($validated['slug']) && $brand->slug === \Illuminate\Support\Str::slug($brand->name)) {
@@ -93,5 +101,20 @@ class BrandController extends Controller
         $brand->delete();
 
         return response()->json(['message' => 'Brand deleted successfully']);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'orders' => 'required|array',
+            'orders.*.id' => 'required|exists:brands,id',
+            'orders.*.sort_order' => 'required|integer',
+        ]);
+
+        foreach ($request->orders as $order) {
+            Brand::where('id', $order['id'])->update(['sort_order' => $order['sort_order']]);
+        }
+
+        return response()->json(['message' => 'Brands reordered successfully']);
     }
 }

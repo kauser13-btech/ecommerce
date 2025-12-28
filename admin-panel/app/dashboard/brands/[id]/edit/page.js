@@ -15,6 +15,7 @@ export default function EditBrandPage({ params }) {
         name: '',
         slug: '',
         logo: '',
+        show_on_home: false,
     });
     const [id, setId] = useState(null);
 
@@ -33,6 +34,7 @@ export default function EditBrandPage({ params }) {
                 name: brand.name,
                 slug: brand.slug,
                 logo: brand.logo || '',
+                show_on_home: brand.show_on_home || false,
             });
         } catch (error) {
             console.error('Error fetching brand:', error);
@@ -51,6 +53,7 @@ export default function EditBrandPage({ params }) {
             const data = new FormData();
             data.append('name', formData.name);
             if (formData.slug) data.append('slug', formData.slug);
+            data.append('show_on_home', formData.show_on_home ? '1' : '0');
 
             if (formData.logo instanceof File) {
                 data.append('logo', formData.logo);
@@ -119,6 +122,21 @@ export default function EditBrandPage({ params }) {
                         value={formData.slug}
                         onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                     />
+                </div>
+
+                <div>
+                    <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                            <input
+                                type="checkbox"
+                                className="absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer peer checked:right-0"
+                                checked={formData.show_on_home}
+                                onChange={(e) => setFormData({ ...formData, show_on_home: e.target.checked })}
+                            />
+                            <span className={`block overflow-hidden h-6 rounded-full cursor-pointer ${formData.show_on_home ? 'bg-blue-600' : 'bg-gray-300'}`}></span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Show on Homepage</span>
+                    </label>
                 </div>
 
                 <div>

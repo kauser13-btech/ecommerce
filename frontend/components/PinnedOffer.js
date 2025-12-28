@@ -15,6 +15,7 @@ export default function PinnedOffer({ offer }) {
                         src={offer.image}
                         alt={offer.title}
                         fill
+                        quality={100}
                         className="object-cover transition-transform duration-500"
                     />
                 ) : (

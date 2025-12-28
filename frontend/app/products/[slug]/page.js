@@ -414,9 +414,9 @@ export default function ProductDetail({ params }) {
           </div>
 
           {/* Bottom Part */}
-          <div className="grid lg:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
             {/* Details Section */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 min-w-0">
               <div className="bg-white rounded-3xl shadow-sm p-8">
                 {(() => {
                   const tabs = [
@@ -526,7 +526,7 @@ export default function ProductDetail({ params }) {
               </div>
             </div>
 
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 min-w-0">
               {relatedProducts.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>

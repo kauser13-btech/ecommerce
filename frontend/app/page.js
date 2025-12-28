@@ -2,6 +2,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/HeroSection';
 import ShopByCategories from '@/components/ShopByCategories';
+import ShopByBrands from '@/components/ShopByBrands';
 import NewArrivalsGrid from '@/components/NewArrivalsGrid';
 import FeaturedProductGrid from '@/components/FeaturedProductGrid';
 
@@ -61,7 +62,10 @@ export default async function Home() {
 
         <ShopByCategories />
 
+
         <FeaturedProductGrid featuredProducts={featuredProducts} />
+
+        <ShopByBrands />
 
         <NewArrivalsGrid newArrivals={newArrivals} />
 

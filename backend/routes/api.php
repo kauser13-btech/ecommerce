@@ -64,6 +64,7 @@ Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{slug}', [BrandController::class, 'show']);
 Route::post('/brands', [BrandController::class, 'store']);
+Route::post('/brands/reorder', [BrandController::class, 'reorder']);
 Route::put('/brands/{id}', [BrandController::class, 'update']);
 Route::delete('/brands/{id}', [BrandController::class, 'destroy']);
 

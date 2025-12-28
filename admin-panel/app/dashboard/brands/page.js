@@ -2,17 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Plus, Pencil, Trash2, Search, LayoutGrid, Home, GripVertical, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'react-hot-toast';
 import api from '@/app/lib/api';
 
 export default function BrandsPage() {
+    const searchParams = useSearchParams();
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [viewMode, setViewMode] = useState('all'); // 'all' or 'home'
+    const [viewMode, setViewMode] = useState(searchParams.get('view') === 'home' ? 'home' : 'all'); // 'all' or 'home'
     const [isReordering, setIsReordering] = useState(false);
+
+    useEffect(() => {
+        const view = searchParams.get('view');
+        if (view === 'home') {
+            setViewMode('home');
+        } else {
+            setViewMode('all');
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         fetchBrands();
@@ -78,9 +89,11 @@ export default function BrandsPage() {
         }
     };
 
-    const filteredBrands = brands.filter(brand =>
-        brand.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredBrands = brands.filter(brand => {
+        const matchesSearch = brand.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesView = viewMode === 'home' ? brand.show_on_home : true;
+        return matchesSearch && matchesView;
+    });
 
     if (loading) {
         return <div className="p-6">Loading...</div>;
@@ -107,8 +120,8 @@ export default function BrandsPage() {
                         <button
                             onClick={() => setViewMode('all')}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'all'
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-gray-600 hover:text-gray-900'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             <LayoutGrid size={16} />
@@ -117,8 +130,8 @@ export default function BrandsPage() {
                         <button
                             onClick={() => setViewMode('home')}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'home'
-                                    ? 'bg-white text-orange-600 shadow-sm'
-                                    : 'text-gray-600 hover:text-gray-900'
+                                ? 'bg-white text-orange-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             <Home size={16} />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import api from '../../lib/api';
 import { Plus, Pencil, Trash2, Loader2, GripVertical, Home, LayoutGrid, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -9,9 +10,10 @@ import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function CategoriesPage() {
+    const searchParams = useSearchParams();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState('all'); // 'all' or 'home'
+    const [viewMode, setViewMode] = useState(searchParams.get('view') === 'home' ? 'home' : 'all'); // 'all' or 'home'
 
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -20,12 +22,25 @@ export default function CategoriesPage() {
     const [isReordering, setIsReordering] = useState(false);
 
     useEffect(() => {
+        const view = searchParams.get('view');
+        if (view === 'home') {
+            setViewMode('home');
+        } else {
+            setViewMode('all');
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
         fetchCategories();
-    }, []);
+    }, [viewMode]);
 
     const fetchCategories = async () => {
         try {
-            const response = await api.get('/categories');
+            const params = {};
+            if (viewMode === 'home') {
+                params.show_on_home = 1;
+            }
+            const response = await api.get('/categories', { params });
             const data = response.data.data || response.data;
             // Ensure sort_order is handled, sort by sort_order
             const sortedData = [...data].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));

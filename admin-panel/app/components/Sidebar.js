@@ -2,20 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag, ChevronDown, ChevronRight, Users, Settings, List } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag, ChevronDown, ChevronRight, Users, Settings, List, Home } from 'lucide-react';
 
 
 const menuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     {
+        name: 'Home Display',
+        href: '/dashboard/products/new-arrivals',
+        icon: Home,
+        submenu: [
+            { name: 'New Arrivals', href: '/dashboard/products/new-arrivals' },
+            { name: 'Featured', href: '/dashboard/products/featured' },
+            { name: 'Categories', href: '/dashboard/categories?view=home' },
+            { name: 'Brands', href: '/dashboard/brands?view=home' },
+        ]
+    },
+    {
         name: 'Products',
         href: '/dashboard/products',
         icon: Package,
         submenu: [
-            { name: 'New Arrivals', href: '/dashboard/products/new-arrivals' },
-            { name: 'Featured', href: '/dashboard/products/featured' },
             { name: 'Add Product', href: '/dashboard/products/new' }
         ]
     },
@@ -33,6 +41,7 @@ const menuItems = [
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [user, setUser] = useState(null);
     const [expandedMenus, setExpandedMenus] = useState({});
 
@@ -135,9 +144,27 @@ export default function Sidebar() {
                             {/* Submenu Items - logic remains same */}
                             {hasSubmenu && isExpanded && (
                                 <div className="mt-1 ml-4 space-y-1 pl-4 border-l-2 border-slate-100">
-                                    <Link href={item.href} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${pathname === item.href && !window.location.search.includes('featured') ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>All Products</Link>
+                                    {item.name !== 'Home Display' && (
+                                        <Link href={item.href} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${pathname === item.href && !searchParams.has('featured') ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>All Products</Link>
+                                    )}
                                     {item.submenu.map((subItem) => {
-                                        const isSubActive = subItem.href.includes('?') ? typeof window !== 'undefined' && window.location.search.includes('featured=true') && subItem.href.includes('featured=true') : pathname === subItem.href;
+                                        // Standardize logic
+                                        let isSubActive = false;
+                                        if (subItem.href.includes('?')) {
+                                            // Extract query param from href (e.g. view=home)
+                                            // simplified check: if current URL has the same query param as the link
+                                            if (subItem.href.includes('view=home')) {
+                                                isSubActive = pathname === subItem.href.split('?')[0] && searchParams.get('view') === 'home';
+                                            } else if (subItem.href.includes('featured=true')) { // hypothetical
+                                                isSubActive = pathname === subItem.href.split('?')[0] && searchParams.get('featured') === 'true';
+                                            }
+                                        } else {
+                                            // Exact match for path, ensure no conflicting params if needed, 
+                                            // but for now simple path match is usually enough unless we have same path with different params.
+                                            // For "New Arrivals" which is just a path, exact match is good.
+                                            isSubActive = pathname === subItem.href;
+                                        }
+
                                         return (
                                             <Link key={subItem.name} href={subItem.href} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isSubActive ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>{subItem.name}</Link>
                                         );

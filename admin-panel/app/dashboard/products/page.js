@@ -107,7 +107,7 @@ export default function ProductsPage() {
 
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
-        const matchesFeatured = showFeaturedOnly ? product.is_featured : true;
+        const matchesFeatured = showFeaturedOnly ? product.is_featured === 1 || product.is_featured === true : true;
         return matchesSearch && matchesFeatured;
     });
 

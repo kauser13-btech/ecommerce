@@ -534,7 +534,7 @@ export default function ProductDetail({ params }) {
                     <Swiper
                       modules={[Autoplay, Navigation]}
                       spaceBetween={20}
-                      slidesPerView={1.2}
+                      slidesPerView={2.2}
                       autoplay={{
                         delay: 3000,
                         disableOnInteraction: false,
@@ -546,7 +546,7 @@ export default function ProductDetail({ params }) {
                       }}
                       breakpoints={{
                         640: {
-                          slidesPerView: 2.2,
+                          slidesPerView: 3.2,
                         },
                         1024: {
                           slidesPerView: 1,

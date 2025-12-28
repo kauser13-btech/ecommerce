@@ -62,7 +62,6 @@ export default async function Home() {
 
         <ShopByCategories />
 
-
         <FeaturedProductGrid featuredProducts={featuredProducts} />
 
         <ShopByBrands />

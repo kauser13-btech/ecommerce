@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '../../../lib/api';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import ImagePicker from '../../../components/ImagePicker';
+import { toast } from 'react-hot-toast';
 
 export default function CategoryFormPage() {
     const router = useRouter();
@@ -17,7 +19,10 @@ export default function CategoryFormPage() {
         name: '',
         slug: '',
         parent_id: '',
-        description: ''
+        description: '',
+        is_active: true,
+        show_on_home: false,
+        image: ''
     });
 
     useEffect(() => {
@@ -44,7 +49,10 @@ export default function CategoryFormPage() {
                 name: data.name,
                 slug: data.slug,
                 parent_id: data.parent_id || '',
-                description: data.description || ''
+                description: data.description || '',
+                is_active: data.is_active ?? true,
+                show_on_home: data.show_on_home ?? false,
+                image: data.image || ''
             });
         } catch (error) {
             console.error('Error fetching category:', error);
@@ -63,10 +71,11 @@ export default function CategoryFormPage() {
             } else {
                 await api.post('/categories', formData);
             }
+            toast.success(isEdit ? 'Category updated successfully' : 'Category created successfully');
             router.push('/dashboard/categories');
         } catch (error) {
             console.error('Error saving category:', error);
-            alert('Failed to save category');
+            toast.error('Failed to save category');
         } finally {
             setLoading(false);
         }
@@ -158,6 +167,47 @@ export default function CategoryFormPage() {
                             rows={4}
                             className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50/50">
+                            <div>
+                                <h3 className="text-sm font-semibold text-gray-900">Active Status</h3>
+                                <p className="text-xs text-gray-500">Enable or disable category</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setFormData(p => ({ ...p, is_active: !p.is_active }))}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 outline-none ${formData.is_active ? 'bg-blue-600' : 'bg-gray-200'}`}
+                            >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${formData.is_active ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50/50">
+                            <div>
+                                <h3 className="text-sm font-semibold text-gray-900">Show on Home</h3>
+                                <p className="text-xs text-gray-500">Display in Shop By Category</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setFormData(p => ({ ...p, show_on_home: !p.show_on_home }))}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 outline-none ${formData.show_on_home ? 'bg-orange-500' : 'bg-gray-200'}`}
+                            >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${formData.show_on_home ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <ImageIcon size={16} /> Category Image
+                        </label>
+                        <ImagePicker
+                            value={formData.image}
+                            onChange={(url) => setFormData(p => ({ ...p, image: url }))}
+                        />
+                        <p className="mt-2 text-xs text-gray-400">This image will be used when displayed in the homepage category section.</p>
                     </div>
 
                     <div className="flex justify-end pt-4">

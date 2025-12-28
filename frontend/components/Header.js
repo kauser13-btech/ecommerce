@@ -97,22 +97,22 @@ export default function Header() {
         }`}
     >
       {/* Topbar */}
-      <div className={`bg-black text-white transition-all duration-300 overflow-hidden ${isScrolled ? 'max-h-0' : 'max-h-10 py-2'}`}>
+      <div className={`bg-gray-50 text-gray-600 transition-all duration-300 overflow-hidden border-b border-gray-100 ${isScrolled ? 'max-h-0' : 'max-h-10 py-2'}`}>
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center text-xs">
           <div className="flex items-center gap-4">
-            <a href="https://www.facebook.com/appleians" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">
+            <a href="https://www.facebook.com/appleians" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition-colors">
               <FacebookIcon className="w-4 h-4" />
             </a>
-            <a href="https://www.instagram.com/appleiansbd" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">
+            <a href="https://www.instagram.com/appleiansbd" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition-colors">
               <InstagramIcon className="w-4 h-4" />
             </a>
-            <a href="https://tiktok.com/@appleians" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">
+            <a href="https://tiktok.com/@appleians" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition-colors">
               <TiktokIcon className="w-4 h-4" />
             </a>
           </div>
           <div className="flex items-center gap-2 font-medium">
             <PhoneIcon className="w-3 h-3" />
-            <a href="tel:01842430000" className="hover:text-gray-300 transition-colors">Hotline : 01842430000</a>
+            <a href="tel:01842430000" className="hover:text-orange-500 transition-colors">Hotline : 01842430000</a>
           </div>
         </div>
       </div>

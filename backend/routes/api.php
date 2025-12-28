@@ -56,6 +56,7 @@ Route::post('/promocodes/apply', [PromoCodeController::class, 'apply']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']); // Changed to ID or check if slug handling logic is robust
 Route::post('/categories', [CategoryController::class, 'store']);
+Route::post('/categories/reorder', [CategoryController::class, 'reorder']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 

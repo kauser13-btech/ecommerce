@@ -15,7 +15,7 @@ export default function HeroSlider({ offers }) {
     if (!offers || offers.length === 0) return null;
 
     return (
-        <div className="h-full w-full min-h-[600px] rounded-2xl overflow-hidden relative group">
+        <div className="h-full w-full min-h-[350px] md:min-h-[450px] lg:min-h-[600px] rounded-2xl overflow-hidden relative group">
             <Swiper
                 modules={[Autoplay, Pagination, EffectFade, Navigation]}
                 effect="fade"
@@ -79,7 +79,7 @@ export default function HeroSlider({ offers }) {
                 opacity: 0.5;
                 }
                 .swiper-pagination-bullet-active {
-                background: #ecececce;
+                background: #ececec8a;
                 opacity: 1;
                 width: 24px;
                 border-radius: 4px;

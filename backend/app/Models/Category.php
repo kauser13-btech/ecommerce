@@ -14,6 +14,8 @@ class Category extends Model
         'icon',
         'sort_order',
         'is_active',
+        'show_on_home',
+        'image',
     ];
 
     protected $casts = [

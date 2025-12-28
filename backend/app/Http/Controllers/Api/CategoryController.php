@@ -8,12 +8,19 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::with('parent')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+        $query = Category::with('parent');
+
+        if ($request->has('is_active')) {
+            $query->where('is_active', $request->boolean('is_active'));
+        }
+
+        if ($request->has('show_on_home')) {
+            $query->where('show_on_home', $request->boolean('show_on_home'));
+        }
+
+        $categories = $query->orderBy('sort_order', 'asc')->get();
 
         return response()->json($categories);
     }
@@ -48,6 +55,9 @@ class CategoryController extends Controller
             'parent_id' => 'nullable|exists:categories,id',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
+            'show_on_home' => 'boolean',
+            'image' => 'nullable|string',
+            'sort_order' => 'integer',
         ]);
 
         $category = Category::create($data);
@@ -65,6 +75,9 @@ class CategoryController extends Controller
             'parent_id' => 'nullable|exists:categories,id',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
+            'show_on_home' => 'boolean',
+            'image' => 'nullable|string',
+            'sort_order' => 'integer',
         ]);
 
         $category->update($data);
@@ -78,5 +91,20 @@ class CategoryController extends Controller
         $category->delete();
 
         return response()->json(['message' => 'Category deleted successfully']);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'orders' => 'required|array',
+            'orders.*.id' => 'required|exists:categories,id',
+            'orders.*.sort_order' => 'required|integer',
+        ]);
+
+        foreach ($request->orders as $order) {
+            Category::where('id', $order['id'])->update(['sort_order' => $order['sort_order']]);
+        }
+
+        return response()->json(['message' => 'Categories reordered successfully']);
     }
 }

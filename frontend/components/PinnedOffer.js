@@ -8,7 +8,7 @@ export default function PinnedOffer({ offer }) {
     const isLink = !!offer.product;
 
     const Content = (
-        <div className="h-full min-h-[280px] bg-[#0B0E14] rounded-2xl overflow-hidden relative flex flex-col p-8 hover:shadow-xl transition-all duration-300 border border-white/5 group">
+        <div className="h-full min-h-[220px] lg:min-h-[280px] rounded-2xl overflow-hidden relative flex flex-col p-8 hover:shadow-xl transition-all duration-300 group">
             <div className="absolute inset-0 w-full h-full">
                 {offer.image ? (
                     <Image
@@ -23,7 +23,6 @@ export default function PinnedOffer({ offer }) {
                     </div>
                 )}
             </div>
-            {/* Optional Overlay for Title if needed, currently just image */}
         </div>
     );
 

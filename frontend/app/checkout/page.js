@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import api from '../../lib/api';
-import { ChevronLeft, Info, Truck, CreditCard, Banknote, Store, Home, ChevronRight, ShoppingCart } from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
+import { Info, Home, ChevronRight, ShoppingCart } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function CheckoutPage() {

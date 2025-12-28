@@ -35,13 +35,13 @@ export default function HeroSlider({ offers }) {
                     const isLink = !!offer.product;
 
                     const SlideContent = (
-                        <div className="block h-full w-full relative">
+                        <div className="block h-full w-full relative group overflow-hidden">
                             {offer.image ? (
                                 <Image
                                     src={offer.image}
                                     alt={offer.title}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover transition-transform duration-700"
                                     priority
                                 />
                             ) : (

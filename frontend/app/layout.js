@@ -1,10 +1,10 @@
 import "./globals.css";
 
-import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
-import WhatsAppButton from "./components/WhatsAppButton";
-import AuthModal from './components/AuthModal';
-import CartModal from './components/CartModal';
+import { AuthProvider } from "../context/AuthContext";
+import { CartProvider } from "../context/CartContext";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import AuthModal from '@/components/AuthModal';
+import CartModal from '@/components/CartModal';
 
 export const metadata = {
   title: "Appleians - Premium Electronics Store",

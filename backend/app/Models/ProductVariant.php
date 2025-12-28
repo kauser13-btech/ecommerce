@@ -13,12 +13,14 @@ class ProductVariant extends Model
         'stock',
         'sku',
         'image',
+        'original_price',
         'is_active'
     ];
 
     protected $casts = [
         'attributes' => 'array',
-        'price' => 'decimal:2',
+        'price' => 'integer',
+        'original_price' => 'integer',
         'is_active' => 'boolean',
     ];
 

@@ -39,8 +39,8 @@ export default function ShopByCategories() {
                                     href={`/products?category=${category.slug}`}
                                     className="group flex flex-col items-center gap-3"
                                 >
-                                    <div className="w-full aspect-square bg-[#FFE8D6] rounded-2xl flex flex-col items-center justify-center p-4 transition-transform duration-300 group-hover:scale-105 shadow-sm hover:shadow-md">
-                                        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform duration-300">
+                                    <div className="w-full aspect-square bg-[#FFE8D6] rounded-2xl flex flex-col items-center justify-center p-4 transition-transform duration-300 shadow-sm hover:shadow-md">
+                                        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-3xl shadow-sm transition-transform duration-300">
                                             {category.icon}
                                         </div>
                                         <span className="text-xs mt-2 font-medium text-gray-800 text-center leading-tight">

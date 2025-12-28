@@ -11,7 +11,11 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand'])->where('is_active', true);
+        $query = Product::with(['category', 'brand']);
+        
+        if (!$request->boolean('include_inactive')) {
+             $query->where('is_active', true);
+        }
 
         if ($request->has('category')) {
             $categorySlug = $request->category;
@@ -191,8 +195,8 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|unique:products,slug',
             'sku' => 'required|string|unique:products,sku',
-            'price' => 'required|numeric',
-            'original_price' => 'nullable|numeric',
+            'price' => 'required|integer',
+            'original_price' => 'nullable|integer',
             'stock' => 'required|integer',
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'required|exists:brands,id',
@@ -221,20 +225,31 @@ class ProductController extends Controller
             $data['options'] = json_decode($data['options'], true);
         }
         
-        // Handle Images
-        if ($request->hasFile('images')) {
-            $imagePaths = [];
-            foreach ($request->file('images') as $image) {
-                // Store in public/products folder
-                $path = $image->store('products', 'public');
-                // Create full URL
-                $imagePaths[] = asset('storage/' . $path);
+        // Create final images array combining uploads and existing (library) images
+        $finalImages = [];
+
+        // 1. Process Existing Images (from Library)
+        if ($request->has('existing_images')) {
+            $existingInputs = $request->input('existing_images');
+            if (is_array($existingInputs)) {
+                $finalImages = $existingInputs;
             }
-            $data['images'] = $imagePaths;
+        }
+
+        // 2. Process New Uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                $finalImages[] = asset('storage/' . $path);
+            }
+        }
+
+        if (count($finalImages) > 0) {
+            $data['images'] = $finalImages;
             
             // Set first image as main image if not provided
-            if (empty($data['image']) && count($imagePaths) > 0) {
-                $data['image'] = $imagePaths[0];
+            if (empty($data['image'])) {
+                $data['image'] = $finalImages[0];
             }
         }
 
@@ -244,7 +259,14 @@ class ProductController extends Controller
         if ($request->has('variants')) {
             $variants = json_decode($request->variants, true); 
             if (is_array($variants)) {
-               $product->variants()->createMany($variants);
+               foreach ($variants as $index => $variantData) {
+                    // Check for image upload for this variant index
+                    if ($request->hasFile("variant_images.$index")) {
+                        $path = $request->file("variant_images.$index")->store('products', 'public');
+                        $variantData['image'] = asset('storage/' . $path);
+                    }
+                    $product->variants()->create($variantData);
+               }
             }
         }
 
@@ -263,8 +285,8 @@ class ProductController extends Controller
             'name' => 'string|max:255',
             'slug' => 'string|unique:products,slug,' . $id,
             'sku' => 'string|unique:products,sku,' . $id,
-            'price' => 'numeric',
-            'original_price' => 'nullable|numeric',
+            'price' => 'integer',
+            'original_price' => 'nullable|integer',
             'stock' => 'integer',
             'category_id' => 'exists:categories,id',
             'brand_id' => 'exists:brands,id',
@@ -347,8 +369,17 @@ class ProductController extends Controller
              $variantsInput = json_decode($request->variants, true);
              if (is_array($variantsInput)) {
                  $existingIds = [];
-                 foreach ($variantsInput as $variantData) {
+                 foreach ($variantsInput as $index => $variantData) {
                      $variant = null;
+
+                     // Handle Image Upload for this variant
+                     if ($request->hasFile("variant_images.$index")) {
+                        $path = $request->file("variant_images.$index")->store('products', 'public');
+                        $variantData['image'] = asset('storage/' . $path);
+                     } elseif (isset($variantData['image']) && $variantData['image'] === null) {
+                         // Explicitly cleared image
+                         $variantData['image'] = null;
+                     }
 
                      // 1. Try to find by ID if provided
                      if (isset($variantData['id'])) {

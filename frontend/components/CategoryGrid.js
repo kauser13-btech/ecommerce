@@ -19,7 +19,7 @@ export default function CategoryGrid() {
                     <Link
                         key={category.slug}
                         href={`/products?category=${category.slug}`}
-                        className={`${category.color} rounded-3xl p-8 h-80 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300`}
+                        className={`${category.color} rounded-3xl p-8 h-80 flex flex-col justify-between transition-transform duration-300`}
                     >
                         <div>
                             <h3 className={`text-2xl font-semibold ${category.slug === 'watch' ? 'text-white' : 'text-gray-900'}`}>

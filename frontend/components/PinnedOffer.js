@@ -15,7 +15,7 @@ export default function PinnedOffer({ offer }) {
                         src={offer.image}
                         alt={offer.title}
                         fill
-                        className="object-cover transform group-hover:scale-105 transition-transform duration-500"
+                        className="object-cover transition-transform duration-500"
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-600 bg-white/5">

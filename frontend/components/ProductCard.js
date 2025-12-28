@@ -15,15 +15,19 @@ export default function ProductCard({ product }) {
     addToCart(product);
   };
 
+  // Determine main image: use product.image or fallback to first image in product.images array
+  const mainImage = product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null);
+
   return (
     <Link href={`/products/${product.slug}`} className="group block">
       <div className="relative aspect-square bg-[#F5F5F7] rounded-2xl overflow-hidden mb-4 border border-transparent group-hover:border-gray-200 transition-colors">
-        {product.image ? (
+        {mainImage ? (
           <Image
-            src={product.image}
+            src={mainImage}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out z-0"
+            className="object-cover transition-transform duration-500 ease-out z-0"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300">

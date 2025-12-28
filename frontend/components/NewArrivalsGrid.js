@@ -67,7 +67,7 @@ export default function NewArrivalsGrid({ newArrivals = [] }) {
                                         src={item.image}
                                         alt={item.title}
                                         fill
-                                        className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                                        className="object-cover transition-transform duration-700 ease-out"
                                     />
 
                                     {/* Overlay / Quick Action (Optional - keeping it clean for now, maybe just subtle overlay) */}
@@ -81,7 +81,7 @@ export default function NewArrivalsGrid({ newArrivals = [] }) {
                                     {item.price && (
                                         <div className="flex items-center gap-2">
                                             <p className="text-gray-900 font-bold">
-                                                ${parseFloat(item.price).toLocaleString()}
+                                                ৳ {parseFloat(item.price).toLocaleString()}
                                             </p>
                                         </div>
                                     )}

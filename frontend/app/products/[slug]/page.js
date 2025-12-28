@@ -1,13 +1,13 @@
 'use client';
 
-import Header from '../../components/Header';
+import Header from '@/components/Header';
 import Link from 'next/link';
-import Footer from '../../components/Footer';
-import ProductCard from '../../components/ProductCard';
-import ImageLightbox from '../../components/ImageLightbox';
+import Footer from '@/components/Footer';
+import ProductCard from '@/components/ProductCard';
+import ImageLightbox from '@/components/ImageLightbox';
 import { Maximize2, ChevronRight, Home, ArrowLeft, ArrowRight } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { useCart } from '../../context/CartContext';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useCart } from '@/context/CartContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -28,6 +28,18 @@ export default function ProductDetail({ params }) {
   const { addToCart, toggleCart } = useCart();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
+  const [zoomOrigin, setZoomOrigin] = useState('center center');
+
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomOrigin(`${x}% ${y}%`);
+  };
+
+  const handleMouseLeave = () => {
+    setZoomOrigin('center center');
+  };
 
   useEffect(() => {
     async function getSlug() {
@@ -119,6 +131,54 @@ export default function ProductDetail({ params }) {
     setSelectedVariant(variant || null);
   }, [product, selectedOptions]);
 
+  const rawImages = useMemo(() => {
+    if (!product) return [];
+    let imgs = [product.image];
+    try {
+      if (product.images) {
+        imgs = typeof product.images === 'string'
+          ? JSON.parse(product.images)
+          : (Array.isArray(product.images) ? product.images : [product.image]);
+      }
+    } catch (error) {
+      imgs = [product.image];
+    }
+    return imgs.filter(Boolean);
+  }, [product]);
+
+  const images = useMemo(() => {
+    const variantImages = product?.variants?.map(v => v.image).filter(Boolean) || [];
+    const uniqueVariantImages = variantImages.filter(img => !rawImages.includes(img));
+
+    // Combine rawImages + uniqueVariantImages
+    // We also want to ensure uniqueness within variantImages themselves if multiple variants use same image
+    const seen = new Set(rawImages);
+    const finalImages = [...rawImages];
+
+    variantImages.forEach(img => {
+      if (!seen.has(img)) {
+        seen.add(img);
+        finalImages.push(img);
+      }
+    });
+
+    return finalImages;
+  }, [product, rawImages]);
+
+  // Reset selected image when slug changes
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [slug]);
+
+  // Auto-switch image when variant selected
+  useEffect(() => {
+    if (selectedVariant?.image) {
+      const idx = images.indexOf(selectedVariant.image);
+      if (idx !== -1) setSelectedImage(idx);
+    }
+  }, [selectedVariant, images]);
+
+
   if (loading) {
     return (
       <>
@@ -143,16 +203,7 @@ export default function ProductDetail({ params }) {
     );
   }
 
-  let images = [product.image];
-  try {
-    if (product.images) {
-      images = typeof product.images === 'string'
-        ? JSON.parse(product.images)
-        : (Array.isArray(product.images) ? product.images : [product.image]);
-    }
-  } catch (error) {
-    images = [product.image];
-  }
+
 
   const handleAddToCart = () => {
     addToCart({
@@ -185,8 +236,12 @@ export default function ProductDetail({ params }) {
 
 
 
-  const discountAmount = product.original_price ? product.original_price - product.price : 0;
-  const discountPercent = product.original_price ? Math.round((discountAmount / product.original_price) * 100) : 0;
+  // Determine current price and original price based on selection
+  const currentPrice = selectedVariant ? Number(selectedVariant.price) : Number(product.price);
+  const currentOriginalPrice = selectedVariant ? (selectedVariant.original_price ? Number(selectedVariant.original_price) : 0) : (product.original_price ? Number(product.original_price) : 0);
+
+  const discountAmount = currentOriginalPrice > currentPrice ? currentOriginalPrice - currentPrice : 0;
+  const discountPercent = currentOriginalPrice > currentPrice ? Math.round((discountAmount / currentOriginalPrice) * 100) : 0;
 
   return (
     <>
@@ -223,14 +278,17 @@ export default function ProductDetail({ params }) {
               {/* Left Column - Images */}
               <div className="space-y-6">
                 <div
-                  className="aspect-[4/3] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden cursor-zoom-in group"
+                  className="aspect-[1] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden cursor-zoom-in group"
                   onClick={() => setIsLightboxOpen(true)}
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseLeave}
                 >
                   {images[selectedImage] ? (
                     <img
                       src={images[selectedImage]}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[2]"
+                      style={{ transformOrigin: zoomOrigin }}
                     />
                   ) : (
                     <div className="text-gray-400">No Image</div>
@@ -273,15 +331,15 @@ export default function ProductDetail({ params }) {
 
                   <div className="flex items-center flex-wrap gap-2">
                     <span className="text-3xl font-bold text-gray-900">
-                      ৳ {selectedVariant ? Number(selectedVariant.price).toLocaleString() : Number(product.price).toLocaleString()}
+                      ৳ {currentPrice.toLocaleString()}
                     </span>
                     {discountPercent > 0 && (
                       <span className="bg-[#ccfccb] text-[#0f5132] px-3 py-1 rounded-full text-sm font-bold">
                         {discountPercent}% off
                       </span>
                     )}
-                    {product.original_price > (selectedVariant?.price || product.price) && (
-                      <span className="text-gray-400 line-through text-lg">৳{Number(product.original_price).toLocaleString()}</span>
+                    {currentOriginalPrice > currentPrice && (
+                      <span className="text-gray-400 line-through text-lg">৳{currentOriginalPrice.toLocaleString()}</span>
                     )}
 
                     {(selectedVariant ? selectedVariant.stock : product.stock) <= 0 && (
@@ -441,7 +499,25 @@ export default function ProductDetail({ params }) {
                             }
                           }
 
-                          return <div dangerouslySetInnerHTML={{ __html: tab.content }} />;
+                          const proseClasses = `
+                            prose prose-stone max-w-none 
+                            prose-p:my-2 
+                            prose-headings:font-bold 
+                            prose-a:text-blue-600 hover:prose-a:text-blue-500 
+                            prose-ul:list-disc prose-ul:pl-5 
+                            prose-ol:list-decimal prose-ol:pl-5 
+                            prose-li:marker:text-orange-500
+                            prose-li:my-1
+                            [&_.ql-ui]:hidden
+                            [&_ol>li[data-list='bullet']]:list-disc
+                            [&_ol>li[data-list='bullet']]:marker:text-orange-500
+                          `;
+
+                          if (tab.id === 'features') {
+                            return <div className={proseClasses} dangerouslySetInnerHTML={{ __html: tab.content }} />;
+                          }
+
+                          return <div className={proseClasses} dangerouslySetInnerHTML={{ __html: tab.content }} />;
                         })()}
                       </div>
                     </div>

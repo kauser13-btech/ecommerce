@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2, Monitor, Link as LinkIcon, Check } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Monitor, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '@/app/lib/api';
 
@@ -15,8 +15,7 @@ export default function ImageUpload({
 }) {
     const fileInputRef = useRef(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('computer'); // 'computer' | 'url' | 'library'
-    const [urlInput, setUrlInput] = useState('');
+    const [activeTab, setActiveTab] = useState('computer'); // 'computer' | 'library'
     const [dragActive, setDragActive] = useState(false);
 
     // Media Library State
@@ -35,15 +34,6 @@ export default function ImageUpload({
 
         // Optional: Check mime type if strictly required, but accept="image/*" handles most.
         // Let's rely on accept prop for type, but strict size check here.
-        return true;
-    };
-
-    const validateUrl = (url) => {
-        // Simple regex for jpg/png/jpeg/gif/webp
-        if (!url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-            toast.error('URL must end with an image extension (.jpg, .png, etc.)');
-            return false;
-        }
         return true;
     };
 
@@ -81,22 +71,6 @@ export default function ImageUpload({
             }
             setIsModalOpen(false);
             toast.success('Image added successfully');
-        }
-    };
-
-    const handleUrlSubmit = (e) => {
-        e.preventDefault();
-        if (!urlInput.trim()) return;
-
-        if (validateUrl(urlInput.trim())) {
-            if (multiple) {
-                onChange([...images, urlInput.trim()]);
-            } else {
-                onChange(urlInput.trim());
-            }
-            setIsModalOpen(false);
-            setUrlInput('');
-            toast.success('Image URL added successfully');
         }
     };
 
@@ -166,11 +140,6 @@ export default function ImageUpload({
                         New File
                     </div>
                 )}
-                {!isFile && typeof item === 'string' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-blue-500/80 backdrop-blur-sm text-white text-[10px] px-1 py-0.5 truncate text-center font-medium">
-                        URL
-                    </div>
-                )}
             </div>
         );
     };
@@ -229,17 +198,6 @@ export default function ImageUpload({
                             </button>
                             <button
                                 type="button"
-                                className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === 'url'
-                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                    }`}
-                                onClick={() => setActiveTab('url')}
-                            >
-                                <LinkIcon size={16} />
-                                From URL
-                            </button>
-                            <button
-                                type="button"
                                 className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === 'library'
                                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
                                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -292,36 +250,6 @@ export default function ImageUpload({
                                             PNG, JPG or GIF (Max 2MB)
                                         </p>
                                     </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'url' && (
-                                <div className="space-y-4 max-w-md mx-auto">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Image URL
-                                        </label>
-                                        <input
-                                            type="url"
-                                            placeholder="https://example.com/image.jpg"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            value={urlInput}
-                                            onChange={(e) => setUrlInput(e.target.value)}
-                                            autoFocus
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Must accept .jpg, .png, .gif, or .webp extensions
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleUrlSubmit}
-                                        disabled={!urlInput}
-                                        className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                    >
-                                        <Check size={16} />
-                                        Add Image
-                                    </button>
                                 </div>
                             )}
 

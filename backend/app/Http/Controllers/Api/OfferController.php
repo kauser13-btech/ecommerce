@@ -17,7 +17,7 @@ class OfferController extends Controller
             $query->where('is_active', true);
         }
         
-        $offers = $query->get();
+        $offers = $query->with('product')->get();
         return response()->json($offers);
     }
 

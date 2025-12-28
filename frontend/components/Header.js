@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import api from '../../lib/api';
+import api from '@/lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -233,7 +233,7 @@ export default function Header() {
                             >
                               <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                                 {product.image ? (
-                                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                  <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">IMG</div>
                                 )}

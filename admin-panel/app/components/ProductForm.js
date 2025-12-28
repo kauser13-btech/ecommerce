@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import api from '../lib/api';
 
 import ErrorModal from './ErrorModal';
+import DuplicateSlugModal from './DuplicateSlugModal';
 import ImageUpload from './ImageUpload';
 import { Loader2, Save, ArrowLeft, Trash2, Plus } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -17,8 +19,10 @@ export default function ProductForm({ initialData, isEdit }) {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
-    const [options, setOptions] = useState([]);
+    const [options, setOptions] = useState(initialData?.options ? [] : [{ name: 'Color', values: [] }]);
     const [errorModal, setErrorModal] = useState({ isOpen: false, errors: null });
+    const [slugModalOpen, setSlugModalOpen] = useState(false);
+    const [pendingSaveRedirect, setPendingSaveRedirect] = useState(null);
 
     const [images, setImages] = useState([]); // Unified state: { type: 'existing'|'new', url: string, file?: File }
     const [specs, setSpecs] = useState([]);
@@ -110,17 +114,45 @@ export default function ProductForm({ initialData, isEdit }) {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const validate = (data = formData) => {
+        const errors = {};
+        if (!data.name) errors.name = 'Please enter the product name';
+        if (!data.price) errors.price = 'Please set a price for the product';
+        if (!data.category_id) errors.category_id = 'Please select a category';
+        if (!data.brand_id) errors.brand_id = 'Please select a brand';
+        if (!data.stock) errors.stock = 'Please define the stock quantity';
+        if (!data.sku) errors.sku = 'Please provide a unique SKU';
+
+        // Remove HTML tags to check if description is empty
+        const cleanDescription = data.description?.replace(/<[^>]+>/g, '').trim();
+        if (!cleanDescription) errors.description = 'Please add a product description';
+
+        if (images.length === 0) {
+            errors.images = 'Please upload at least one image for the product';
+        }
+
+        return Object.keys(errors).length > 0 ? errors : null;
+    };
+
+    const saveProduct = async (shouldRedirect = true, overrideData = null) => {
+        // Use override data for validation if provided, merging with current state
+        const dataToSubmit = overrideData ? { ...formData, ...overrideData } : formData;
+
+        const errors = validate(dataToSubmit);
+        if (errors) {
+            setErrorModal({ isOpen: true, errors: Object.values(errors) });
+            return;
+        }
+
         setLoading(true);
 
         try {
             const formDataObj = new FormData();
 
             // Append regular fields
-            Object.keys(formData).forEach(key => {
-                if (key === 'image' || key === 'images') return; // Skip image fields, handled separately or via files
-                let value = formData[key];
+            Object.keys(dataToSubmit).forEach(key => {
+                if (key === 'image' || key === 'images') return;
+                let value = dataToSubmit[key];
 
                 // Convert booleans to 1/0 for backend validation
                 if (typeof value === 'boolean') {
@@ -153,25 +185,92 @@ export default function ProductForm({ initialData, isEdit }) {
                 formDataObj.append('images[]', file);
             });
 
+            // Append Variant Images
+            variants.forEach((variant, index) => {
+                if (variant.image_file) {
+                    formDataObj.append(`variant_images[${index}]`, variant.image_file);
+                }
+            });
+
             const config = { headers: { 'Content-Type': 'multipart/form-data' } };
 
+            let response;
             if (isEdit) {
                 // For update, we might need to handle _method: PUT for Laravel to process files correctly 
                 // (standard Laravel behavior for PUT/PATCH with files)
                 formDataObj.append('_method', 'PUT');
-                await api.post(`/products/${initialData.id}`, formDataObj, config);
+                response = await api.post(`/products/${initialData.id}`, formDataObj, config);
             } else {
-                await api.post('/products', formDataObj, config);
+                response = await api.post('/products', formDataObj, config);
             }
-            router.push('/dashboard/products');
+
+            toast.success('Product saved successfully');
+
+            if (shouldRedirect) {
+                router.push('/dashboard/products');
+            } else {
+                // If staying, we might want to refresh data or just keep as is
+                // But if it was "Create", we are now in "Edit" theoretically, handling that might be complex
+                // For now, assuming "Update and Stay" keeps on same page.
+                // If it was create, we probably need to redirect to edit page or reset form?
+                // For this task, user usually asks for Edit page.
+                if (!isEdit && response?.data?.data?.id) {
+                    // If we created a product and chose to stay, switch to edit page (which is just /products/[id])
+                    router.push(`/dashboard/products/${response.data.data.id}`);
+                }
+            }
+
         } catch (error) {
             console.error('Error saving product:', error);
             const errors = error.response?.data?.errors || error.response?.data?.message || error.message;
-            setErrorModal({ isOpen: true, errors });
+
+            // Check if it's a slug duplicate error
+            const slugError = error.response?.data?.errors?.slug;
+            if (slugError && slugError.some(msg => msg.includes('taken') || msg.includes('unique'))) {
+                setPendingSaveRedirect(shouldRedirect);
+                setSlugModalOpen(true);
+            } else {
+                setErrorModal({ isOpen: true, errors });
+            }
         } finally {
             setLoading(false);
         }
     };
+
+    const handleSaveAnyway = () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 7);
+        const newSlug = `${formData.slug}-${randomSuffix}`;
+
+        // Update state and retry save immediately
+        // We need to use updated state for save, so bestway is setting it and calling save in useEffect or passing passed data?
+        // Since setState is async, we can't just call saveProduct() immediately with state.
+        // We will modify formData directly for the retry call logic if we refactored saveProduct to accept data.
+        // But simpler: update state, and just re-call save logic with patched internal data or just wait?
+        // Let's manually update formData state AND call save with the NEW slug override if we change saveProduct to accept override.
+        // Or simpler: Just update state and use a timeout/effect? No.
+
+        // Best approach: Modifying saveProduct to accept an optional data override object would be cleanest,
+        // but let's just update formData and then call a modified internal save helper.
+        // Actually, easiest is to setFormData and then trigger specific logic.
+
+        // Let's implement immediate recursive call with patched data:
+        // We will pass the new slug to saveProduct? No, saveProduct reads from state.
+
+        // Let's update state and blindly try again? No, state update is slow.
+        // Let's manually path it in the object we send?
+        // We need to refactor saveProduct slightly or duplicate the Logic?
+        // Refactoring saveProduct to use current `formData` from CLOSURE vs State is tricky.
+
+        // Let's do this:
+        setFormData(prev => ({ ...prev, slug: newSlug }));
+
+        // Hacky but works: We need to wait for state update? or just push the new slug into the request?
+        // Let's use a specialized effect or just pass "overrideSlug" to saveProduct?
+        // Let's add an argument to saveProduct: `overrideData = null`
+        saveProduct(pendingSaveRedirect, { slug: newSlug });
+        setSlugModalOpen(false);
+    };
+
 
     const [isSlugDirty, setIsSlugDirty] = useState(false);
 
@@ -268,6 +367,7 @@ export default function ProductForm({ initialData, isEdit }) {
                 price: formData.price,
                 stock: formData.stock,
                 sku: `${formData.sku}-${skuSuffix}`,
+                original_price: formData.original_price,
                 is_active: true
             };
         });
@@ -286,7 +386,7 @@ export default function ProductForm({ initialData, isEdit }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-8">
+        <form onSubmit={(e) => { e.preventDefault(); saveProduct(true); }} onKeyDown={handleKeyDown} className="space-y-8">
             {/* header */}
             <div className="flex items-center justify-between">
                 <button
@@ -297,14 +397,26 @@ export default function ProductForm({ initialData, isEdit }) {
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
                 </button>
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    {isEdit ? 'Update Product' : 'Create Product'}
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => saveProduct(false)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                    >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {isEdit ? 'Update & Stay' : 'Save & Stay'}
+                    </button>
+                    <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => saveProduct(true)}
+                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {isEdit ? 'Update & Back' : 'Save & Back'}
+                    </button>
+                </div>
             </div>
 
 
@@ -513,67 +625,7 @@ export default function ProductForm({ initialData, isEdit }) {
                         </div>
                     </div>
 
-                    {/* Generated Variants List */}
-                    {variants.length > 0 && (
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Generated Variants ({variants.length})</h3>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left text-gray-500">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-3">Variant</th>
-                                            <th className="px-4 py-3">Price</th>
-                                            <th className="px-4 py-3">Stock</th>
-                                            <th className="px-4 py-3">SKU</th>
-                                            <th className="px-4 py-3">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {variants.map((variant, index) => (
-                                            <tr key={index} className="border-b hover:bg-gray-50">
-                                                <td className="px-4 py-3 font-medium text-gray-900">
-                                                    {Object.entries(variant.attributes).map(([k, v]) => `${k}: ${v}`).join(', ')}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="number"
-                                                        value={variant.price}
-                                                        onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
-                                                        className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="number"
-                                                        value={variant.stock}
-                                                        onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
-                                                        className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="text"
-                                                        value={variant.sku}
-                                                        onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                                                        className="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeVariant(index)}
-                                                        className="text-red-500 hover:text-red-700"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Sidebar Info */}
@@ -622,7 +674,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                                 <select
                                     name="category_id"
-                                    value={formData.category_id}
+                                    value={formData.category_id || ''}
                                     onChange={handleChange}
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                     required
@@ -638,7 +690,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
                                 <select
                                     name="brand_id"
-                                    value={formData.brand_id}
+                                    value={formData.brand_id || ''}
                                     onChange={handleChange}
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                     required
@@ -655,10 +707,12 @@ export default function ProductForm({ initialData, isEdit }) {
                                 <input
                                     type="number"
                                     name="price"
-                                    value={formData.price}
+                                    value={formData.price || ''}
                                     onChange={handleChange}
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                     required
+                                    onKeyDown={(evt) => ["e", "E", "+", "-", ",", "."].includes(evt.key) && evt.preventDefault()}
+                                    step="1"
                                 />
                             </div>
                             <div>
@@ -666,9 +720,11 @@ export default function ProductForm({ initialData, isEdit }) {
                                 <input
                                     type="number"
                                     name="original_price"
-                                    value={formData.original_price}
+                                    value={formData.original_price || ''}
                                     onChange={handleChange}
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    onKeyDown={(evt) => ["e", "E", "+", "-", ",", "."].includes(evt.key) && evt.preventDefault()}
+                                    step="1"
                                 />
                             </div>
 
@@ -785,10 +841,119 @@ export default function ProductForm({ initialData, isEdit }) {
                 </div>
             </div>
 
+            {/* Generated Variants List */}
+            {variants.length > 0 && (
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Generated Variants ({variants.length})</h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left text-gray-500">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-3">Variant</th>
+                                    <th className="px-4 py-3">Price</th>
+                                    <th className="px-4 py-3">Original Price</th>
+                                    <th className="px-4 py-3">Image</th>
+                                    <th className="px-4 py-3">Stock</th>
+                                    <th className="px-4 py-3">SKU</th>
+                                    <th className="px-4 py-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {variants.map((variant, index) => (
+                                    <tr key={index} className="border-b hover:bg-gray-50">
+                                        <td className="px-4 py-3 font-medium text-gray-900">
+                                            {Object.entries(variant.attributes).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="number"
+                                                value={variant.price}
+                                                onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                                                className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                step="1"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === '.' || e.key === ',') e.preventDefault();
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="number"
+                                                value={variant.original_price || ''}
+                                                onChange={(e) => handleVariantChange(index, 'original_price', e.target.value)}
+                                                className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                step="1"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === '.' || e.key === ',') e.preventDefault();
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {variant.image ? (
+                                                <div className="flex items-center gap-2">
+                                                    <img src={variant.image} alt="Variant" className="w-8 h-8 object-cover rounded" />
+                                                    <button type="button" onClick={() => handleVariantChange(index, 'image', null)} className="text-red-500 text-xs">Remove</button>
+                                                </div>
+                                            ) : (
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        if (file) {
+                                                            handleVariantChange(index, 'image_file', file);
+                                                            // Preview
+                                                            handleVariantChange(index, 'image', URL.createObjectURL(file));
+                                                        }
+                                                    }}
+                                                    className="text-xs"
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="number"
+                                                value={variant.stock}
+                                                onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                                                className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="text"
+                                                value={variant.sku}
+                                                onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
+                                                className="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeVariant(index)}
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
             <ErrorModal
                 isOpen={errorModal.isOpen}
-                onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+                onClose={() => setErrorModal({ isOpen: false, errors: null })}
                 errors={errorModal.errors}
+            />
+
+            <DuplicateSlugModal
+                isOpen={slugModalOpen}
+                onClose={() => setSlugModalOpen(false)}
+                onSaveAnyway={handleSaveAnyway}
+                slug={formData.slug}
             />
         </form >
     );

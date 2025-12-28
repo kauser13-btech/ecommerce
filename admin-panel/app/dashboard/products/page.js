@@ -27,7 +27,7 @@ export default function ProductsPage() {
 
     const fetchProducts = async () => {
         try {
-            const response = await api.get('/products');
+            const response = await api.get('/products?include_inactive=true');
             setProducts(response.data.data || response.data);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -46,7 +46,7 @@ export default function ProductsPage() {
             const updatedProduct = { ...product, [field]: value };
             // Optimistic update
             setProducts(products.map(p => p.id === id ? updatedProduct : p));
-            await api.put(`/products/${id}`, updatedProduct);
+            await api.put(`/products/${id}`, { [field]: value });
             toast.success(`${field === 'price' ? 'Price' : 'Stock'} updated`);
         } catch (error) {
             console.error(`Error updating ${field}:`, error);
@@ -60,7 +60,7 @@ export default function ProductsPage() {
         try {
             const updatedProduct = { ...product, is_active: !product.is_active };
             setProducts(products.map(p => p.id === product.id ? updatedProduct : p));
-            await api.put(`/products/${product.id}`, updatedProduct);
+            await api.put(`/products/${product.id}`, { is_active: updatedProduct.is_active });
             toast.success(updatedProduct.is_active ? 'Product activated' : 'Product deactivated');
         } catch (error) {
             console.error('Error updating product status:', error);
@@ -73,7 +73,7 @@ export default function ProductsPage() {
         try {
             const updatedProduct = { ...product, is_featured: !product.is_featured };
             setProducts(products.map(p => p.id === product.id ? updatedProduct : p));
-            await api.put(`/products/${product.id}`, updatedProduct);
+            await api.put(`/products/${product.id}`, { is_featured: updatedProduct.is_featured });
             toast.success(updatedProduct.is_featured ? 'Added to featured' : 'Removed from featured');
         } catch (error) {
             console.error('Error updating featured status:', error);

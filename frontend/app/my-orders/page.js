@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import Link from 'next/link'; // Import Link
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { Package, Search } from 'lucide-react';
-import api from '../../lib/api';
+import api from '@/lib/api';
 
 export default function MyOrdersPage() {
     const { user, loading: authLoading } = useAuth();

@@ -1,28 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Link as LinkIcon, Loader2, Check } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Check } from 'lucide-react';
 import api from '@/app/lib/api';
 
 export default function ImagePicker({ value, onChange }) {
-    const [activeTab, setActiveTab] = useState('upload'); // 'upload', 'library', 'url'
+    const [activeTab, setActiveTab] = useState('upload'); // 'upload', 'library'
     const [libraryImages, setLibraryImages] = useState([]);
     const [loadingLibrary, setLoadingLibrary] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [urlInput, setUrlInput] = useState('');
 
     useEffect(() => {
         if (activeTab === 'library' && libraryImages.length === 0) {
             fetchLibrary();
         }
     }, [activeTab]);
-
-    useEffect(() => {
-        // Sync internal URL input if value changes externally (e.g. initial load)
-        if (value && activeTab === 'url') {
-            setUrlInput(value);
-        }
-    }, [value]);
 
 
     const fetchLibrary = async () => {
@@ -61,11 +53,6 @@ export default function ImagePicker({ value, onChange }) {
         }
     };
 
-    const handleUrlChange = (e) => {
-        setUrlInput(e.target.value);
-        onChange(e.target.value);
-    };
-
     return (
         <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
             {/* Tabs */}
@@ -83,13 +70,6 @@ export default function ImagePicker({ value, onChange }) {
                     className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'library' ? 'bg-white text-blue-600 border-b-2 border-blue-600 -mb-px' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                     <ImageIcon size={16} /> Library
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('url')}
-                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'url' ? 'bg-white text-blue-600 border-b-2 border-blue-600 -mb-px' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                    <LinkIcon size={16} /> URL
                 </button>
             </div>
 
@@ -150,18 +130,6 @@ export default function ImagePicker({ value, onChange }) {
                                 )}
                             </div>
                         )}
-                    </div>
-                )}
-
-                {activeTab === 'url' && (
-                    <div>
-                        <input
-                            type="text"
-                            placeholder="https://example.com/image.jpg"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={urlInput} // Use local state to avoid jumping if controlled purely by parent
-                            onChange={handleUrlChange}
-                        />
                     </div>
                 )}
 

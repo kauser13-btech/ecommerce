@@ -332,6 +332,13 @@ export default function ProductForm({ initialData, isEdit }) {
         const newOptions = [...options];
         if (field === 'values') {
             newOptions[index][field] = value.split(',').map(v => v.trim());
+        } else if (field === 'name') {
+            // Validate that variation name is not "color" or "Colors" (case-insensitive)
+            if (value.toLowerCase() === 'color' || value.toLowerCase() === 'colors') {
+                toast.error('The variation name "color" is reserved. Please use the "Product Colors" feature to manage product colors.');
+                return; // Don't update the state
+            }
+            newOptions[index][field] = value;
         } else {
             newOptions[index][field] = value;
         }

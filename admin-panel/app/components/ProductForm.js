@@ -20,7 +20,7 @@ export default function ProductForm({ initialData, isEdit }) {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
-    const [options, setOptions] = useState(initialData?.options ? [] : [{ name: 'Color', values: [] }]);
+    const [options, setOptions] = useState([]);
     const [errorModal, setErrorModal] = useState({ isOpen: false, errors: null });
     const [slugModalOpen, setSlugModalOpen] = useState(false);
     const [openColorPicker, setOpenColorPicker] = useState(null);
@@ -205,7 +205,6 @@ export default function ProductForm({ initialData, isEdit }) {
             });
 
             // Append Variant Images
-            // Append Variant Images
             variants.forEach((variant, index) => {
                 if (variant.image_file) {
                     formDataObj.append(`variant_images[${index}]`, variant.image_file);
@@ -231,8 +230,6 @@ export default function ProductForm({ initialData, isEdit }) {
 
             let response;
             if (isEdit) {
-                // For update, we might need to handle _method: PUT for Laravel to process files correctly 
-                // (standard Laravel behavior for PUT/PATCH with files)
                 formDataObj.append('_method', 'PUT');
                 response = await api.post(`/products/${initialData.id}`, formDataObj, config);
             } else {
@@ -244,13 +241,7 @@ export default function ProductForm({ initialData, isEdit }) {
             if (shouldRedirect) {
                 router.push('/dashboard/products');
             } else {
-                // If staying, we might want to refresh data or just keep as is
-                // But if it was "Create", we are now in "Edit" theoretically, handling that might be complex
-                // For now, assuming "Update and Stay" keeps on same page.
-                // If it was create, we probably need to redirect to edit page or reset form?
-                // For this task, user usually asks for Edit page.
                 if (!isEdit && response?.data?.data?.id) {
-                    // If we created a product and chose to stay, switch to edit page (which is just /products/[id])
                     router.push(`/dashboard/products/${response.data.data.id}`);
                 }
             }
@@ -368,10 +359,6 @@ export default function ProductForm({ initialData, isEdit }) {
     };
 
     const generateVariants = () => {
-        // We combine Product Colors and Options
-        // If Product Colors exist, we MUST treat 'Color' as an option dimension.
-        // We will synthetically add 'Color' option to the Cartesian mix if productColors > 0.
-
         // Filter out empty options first
         const validOptions = options.filter(opt => opt.name && opt.values.length > 0);
 
@@ -1041,7 +1028,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                 </button>
                                 <input
                                     type="text"
-                                    placeholder="Name (e.g. Color)"
+                                    placeholder="Name (e.g. Ram, Storage etc.)"
                                     value={option.name}
                                     onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
                                     className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"

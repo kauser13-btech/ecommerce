@@ -14,7 +14,8 @@ class ProductVariant extends Model
         'sku',
         'image',
         'original_price',
-        'is_active'
+        'is_active',
+        'is_preorder',
     ];
 
     protected $casts = [
@@ -22,6 +23,7 @@ class ProductVariant extends Model
         'price' => 'integer',
         'original_price' => 'integer',
         'is_active' => 'boolean',
+        'is_preorder' => 'boolean',
     ];
 
     public function product()

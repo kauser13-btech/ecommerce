@@ -175,6 +175,7 @@ export default function ProductsPage() {
                                 <th className="px-6 py-3">Original Price</th>
                                 <th className="px-6 py-3">Cash Price</th>
                                 <th className="px-6 py-3">Stock</th>
+                                <th className="px-6 py-3 text-center">Variants</th>
                                 <th className="px-6 py-3">Featured</th>
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
@@ -212,6 +213,11 @@ export default function ProductsPage() {
                                             onBlur={(e) => handleUpdateProduct(product.id, 'stock', e.target.value)}
                                             className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                                         />
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.variants_count > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                                            {product.variants_count || 0}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <button

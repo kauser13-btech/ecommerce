@@ -13,11 +13,13 @@ class OrderItem extends Model
         'price',
         'quantity',
         'subtotal',
+        'is_preorder',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'is_preorder' => 'boolean',
     ];
 
     public function order()

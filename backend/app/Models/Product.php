@@ -22,6 +22,7 @@ class Product extends Model
         'brand_id',
         'is_featured',
         'is_new',
+        'is_preorder',
         'featured_order',
         'new_arrival_order',
         'is_active',
@@ -36,6 +37,7 @@ class Product extends Model
         'options' => 'array',
         'is_featured' => 'boolean',
         'is_new' => 'boolean',
+        'is_preorder' => 'boolean',
         'is_active' => 'boolean',
     ];
 

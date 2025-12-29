@@ -208,6 +208,7 @@ export default function ProductDetail({ params }) {
   const handleAddToCart = () => {
     addToCart({
       ...product,
+      product_id: product.id,
       id: selectedVariant ? selectedVariant.id : product.id, // Use variant ID if selected? Or keep product ID and add variant_id? Usually Cart item needs unique ID.
       variant_id: selectedVariant?.id,
       price: selectedVariant ? selectedVariant.price : product.price,
@@ -221,6 +222,7 @@ export default function ProductDetail({ params }) {
   const handleBuyNow = () => {
     addToCart({
       ...product,
+      product_id: product.id,
       id: selectedVariant ? selectedVariant.id : product.id,
       variant_id: selectedVariant?.id,
       price: selectedVariant ? selectedVariant.price : product.price,
@@ -239,6 +241,13 @@ export default function ProductDetail({ params }) {
   // Determine current price and original price based on selection
   const currentPrice = selectedVariant ? Number(selectedVariant.price) : Number(product.price);
   const currentOriginalPrice = selectedVariant ? (selectedVariant.original_price ? Number(selectedVariant.original_price) : 0) : (product.original_price ? Number(product.original_price) : 0);
+  // Helper to check pre-order status safely
+  const checkPreOrder = (item) => {
+    if (!item) return false;
+    return item.is_preorder === true || item.is_preorder === 1 || item.is_preorder === '1' || item.is_preorder === 'true';
+  };
+
+  const isPreOrder = selectedVariant ? checkPreOrder(selectedVariant) : checkPreOrder(product);
 
   const discountAmount = currentOriginalPrice > currentPrice ? currentOriginalPrice - currentPrice : 0;
   const discountPercent = currentOriginalPrice > currentPrice ? Math.round((discountAmount / currentOriginalPrice) * 100) : 0;
@@ -328,7 +337,6 @@ export default function ProductDetail({ params }) {
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
                   <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
-
                   <div className="flex items-center flex-wrap gap-2">
                     <span className="text-3xl font-bold text-gray-900">
                       ৳ {currentPrice.toLocaleString()}
@@ -342,7 +350,13 @@ export default function ProductDetail({ params }) {
                       <span className="text-gray-400 line-through text-lg">৳{currentOriginalPrice.toLocaleString()}</span>
                     )}
 
-                    {(selectedVariant ? selectedVariant.stock : product.stock) <= 0 && (
+                    {isPreOrder && (
+                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-bold border border-purple-200">
+                        Pre-Order
+                      </span>
+                    )}
+
+                    {!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0 && (
                       <span className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-bold">Out of Stock</span>
                     )}
                   </div>
@@ -380,43 +394,43 @@ export default function ProductDetail({ params }) {
                       <button
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
-                        disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                       >-</button>
                       <span className="w-8 text-center font-semibold">{quantity}</span>
                       <button
                         onClick={() => setQuantity(quantity + 1)}
                         className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
-                        disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                       >+</button>
                     </div>
 
                     <button
                       onClick={handleBuyNow}
-                      disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                      disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                       className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
                     >
-                      {(selectedVariant ? selectedVariant.stock : product.stock) <= 0 ? 'Out of Stock' : 'Buy Now'}
+                      {isPreOrder ? 'Pre-Order Now' : ((selectedVariant ? selectedVariant.stock : product.stock) <= 0 ? 'Out of Stock' : 'Buy Now')}
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                     </button>
 
                     <button
                       onClick={handleAddToCart}
-                      disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                      disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                       className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                     >
-                      Add to Cart
+                      {isPreOrder ? 'Pre-Order' : 'Add to Cart'}
                     </button>
                   </div>
                 </div>
 
-              </div>
-            </div>
-          </div>
+              </div >
+            </div >
+          </div >
 
           {/* Bottom Part */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+          < div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12" >
             {/* Details Section */}
-            <div className="lg:col-span-3 min-w-0">
+            < div className="lg:col-span-3 min-w-0" >
               <div className="bg-white rounded-3xl shadow-sm p-8">
                 {(() => {
                   const tabs = [
@@ -524,7 +538,7 @@ export default function ProductDetail({ params }) {
                   );
                 })()}
               </div>
-            </div>
+            </div >
 
             <div className="lg:col-span-1 min-w-0">
               {relatedProducts.length > 0 && (
@@ -576,9 +590,9 @@ export default function ProductDetail({ params }) {
                 </section>
               )}
             </div>
-          </div>
-        </div>
-      </main>
+          </div >
+        </div >
+      </main >
 
       <ImageLightbox
         images={images}

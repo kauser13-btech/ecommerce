@@ -35,14 +35,19 @@ export default function ProductCard({ product, isSkeleton = false }) {
   return (
     <Link href={`/products/${product.slug}`} className="group block">
       <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-100 mb-4">
-        {/* Badge: New */}
-        {product.is_new && (
-          <div className="absolute top-3 left-3 z-10">
+        {/* Badges Container */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 items-start">
+          {product.is_new && (
             <span className="bg-black/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-md shadow-sm">
               New
             </span>
-          </div>
-        )}
+          )}
+          {product.is_preorder && (
+            <span className="bg-purple-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-md shadow-sm">
+              Pre-Order
+            </span>
+          )}
+        </div>
 
         {/* Badge: Sale (if original price > price) */}
         {product.original_price > product.price && (
@@ -67,9 +72,9 @@ export default function ProductCard({ product, isSkeleton = false }) {
 
         <button
           onClick={handleAddToCart}
-          disabled={product.stock <= 0}
+          disabled={!product.is_preorder && product.stock <= 0}
           className="absolute bottom-3 right-3 bg-white text-black p-2.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 z-20 hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          title={product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+          title={product.is_preorder ? "Pre-Order" : (product.stock <= 0 ? "Out of Stock" : "Add to Cart")}
         >
           <ShoppingCart size={18} strokeWidth={2} />
         </button>

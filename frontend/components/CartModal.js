@@ -110,6 +110,13 @@ export default function CartModal() {
                                                         <X className="w-4 h-4" />
                                                     </button>
                                                 </div>
+                                                {item.is_preorder && (
+                                                    <div className="mt-1">
+                                                        <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">
+                                                            Pre-Order
+                                                        </span>
+                                                    </div>
+                                                )}
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     {item.selectedColor && `Color: ${item.selectedColor} `}
                                                     {item.selectedStorage && `| Storage: ${item.selectedStorage}`}

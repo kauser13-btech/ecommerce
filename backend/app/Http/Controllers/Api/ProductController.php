@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand']);
+        $query = Product::with(['category', 'brand'])->withCount('variants');
         
         if (!$request->boolean('include_inactive')) {
              $query->where('is_active', true);
@@ -209,6 +209,7 @@ class ProductController extends Controller
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'is_new' => 'boolean',
+            'is_preorder' => 'boolean',
             'options' => 'nullable|json',
             'variants' => 'nullable|json',
         ]);
@@ -299,6 +300,7 @@ class ProductController extends Controller
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'is_new' => 'boolean',
+            'is_preorder' => 'boolean',
             'options' => 'nullable|json',
             'variants' => 'nullable|json',
         ]);

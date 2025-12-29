@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\PromoCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +55,9 @@ class OrderController extends Controller
             'payment_method' => 'required|in:cod,online',
             'delivery_method' => 'required|in:courier,pickup',
             'items' => 'required|array|min:1',
-            'items.*.id' => 'required|exists:products,id',
+            'items.*.id' => 'required', // Can be product or variant ID
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
             'promo_code' => 'nullable|string|exists:promo_codes,code'
         ]);
@@ -66,29 +69,56 @@ class OrderController extends Controller
             $itemsToCreate = [];
 
             // Calculate Subtotal and check stock
+            // Calculate Subtotal and check stock
             foreach ($request->items as $item) {
-                $product = Product::findOrFail($item['id']);
-                
-                if ($product->stock < $item['quantity']) {
-                    throw new \Exception("Insufficient stock for product: {$product->name}");
+                $variantId = $item['variant_id'] ?? null;
+                $productId = $item['product_id'] ?? null;
+                // Fallback: if no product_id and no variant_id, assume id is product_id
+                if (!$productId && !$variantId) {
+                    $productId = $item['id'];
                 }
 
-                $price = $product->price; 
+                $product = null;
+                $variant = null;
+                $price = 0;
+                $isPreOrder = false;
+                $targetForStock = null;
+
+                if ($variantId) {
+                    $variant = ProductVariant::with('product')->findOrFail($variantId);
+                    $product = $variant->product;
+                    $price = $variant->price;
+                    $isPreOrder = $variant->is_preorder;
+                    $targetForStock = $variant;
+                } else {
+                    $product = Product::findOrFail($productId);
+                    $price = $product->price;
+                    $isPreOrder = $product->is_preorder;
+                    $targetForStock = $product;
+                }
+                
+                // Stock Check
+                if (!$isPreOrder && $targetForStock->stock < $item['quantity']) {
+                    throw new \Exception("Insufficient stock for product: {$product->name}" . ($variant ? " ({$variant->name})" : ""));
+                }
                 
                 $lineTotal = $price * $item['quantity'];
                 $subtotal += $lineTotal;
 
                 $itemsToCreate[] = [
                     'product_id' => $product->id,
-                    'product_name' => $product->name,
+                    'product_name' => $product->name . ($variant ? " - " . ($variant->name ?: 'Variant') : ""),
                     'price' => $price,
                     'quantity' => $item['quantity'],
                     'subtotal' => $lineTotal,
                     'variation' => isset($item['selectedOptions']) ? json_encode($item['selectedOptions']) : null,
+                    'is_preorder' => $isPreOrder,
                 ];
 
                 // Decrement stock
-                $product->decrement('stock', $item['quantity']);
+                if (!$isPreOrder) {
+                    $targetForStock->decrement('stock', $item['quantity']);
+                }
             }
 
             // Calculate Totals

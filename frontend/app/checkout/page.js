@@ -391,6 +391,13 @@ export default function CheckoutPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
+                                                {item.is_preorder && (
+                                                    <div className="mb-1">
+                                                        <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">
+                                                            Pre-Order
+                                                        </span>
+                                                    </div>
+                                                )}
                                                 <p className="text-sm text-gray-500">{item.selectedOptions && Object.values(item.selectedOptions).join(' / ')}</p>
                                                 <p className="text-sm text-gray-500">x {item.quantity}</p>
                                             </div>

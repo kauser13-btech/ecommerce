@@ -41,6 +41,7 @@ export default function ProductForm({ initialData, isEdit }) {
         is_active: true,
         is_featured: false,
         is_new: false,
+        is_preorder: false,
         features: '',
         specifications: '{}'
     });
@@ -368,7 +369,8 @@ export default function ProductForm({ initialData, isEdit }) {
                 stock: formData.stock,
                 sku: `${formData.sku}-${skuSuffix}`,
                 original_price: formData.original_price,
-                is_active: true
+                is_active: true,
+                is_preorder: !!formData.is_preorder
             };
         });
 
@@ -780,6 +782,17 @@ export default function ProductForm({ initialData, isEdit }) {
                                 />
                                 <span className="text-sm text-gray-700">New Arrival</span>
                             </label>
+
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="is_preorder"
+                                    checked={formData.is_preorder}
+                                    onChange={handleChange}
+                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">Pre-order</span>
+                            </label>
                         </div>
                     </div>
 
@@ -855,6 +868,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                     <th className="px-4 py-3">Image</th>
                                     <th className="px-4 py-3">Stock</th>
                                     <th className="px-4 py-3">SKU</th>
+                                    <th className="px-4 py-3">Pre-order</th>
                                     <th className="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
@@ -924,6 +938,14 @@ export default function ProductForm({ initialData, isEdit }) {
                                                 value={variant.sku}
                                                 onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
                                                 className="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!variant.is_preorder}
+                                                onChange={(e) => handleVariantChange(index, 'is_preorder', e.target.checked)}
+                                                className="rounded text-blue-600 focus:ring-blue-500"
                                             />
                                         </td>
                                         <td className="px-4 py-3">

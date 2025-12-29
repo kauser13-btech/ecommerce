@@ -16,6 +16,7 @@ class ProductVariant extends Model
         'original_price',
         'is_active',
         'is_preorder',
+        'variation_color_name',
     ];
 
     protected $casts = [

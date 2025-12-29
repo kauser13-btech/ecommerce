@@ -131,23 +131,52 @@ export default function ProductDetail({ params }) {
     setSelectedVariant(variant || null);
   }, [product, selectedOptions]);
 
+  // Determine image source for variants
+  const getVariantImage = (variant) => {
+    if (!variant) return null;
+    // 1. If variant has specific override image, use it
+    if (variant.image) return variant.image;
+
+    // 2. If variant has color name, look it up in product_colors
+    if (variant.variation_color_name && product.product_colors) {
+      try {
+        const colors = typeof product.product_colors === 'string' ? JSON.parse(product.product_colors) : product.product_colors;
+        const matchedColor = Array.isArray(colors) ? colors.find(c => c.name === variant.variation_color_name) : null;
+        if (matchedColor && matchedColor.image) return matchedColor.image;
+      } catch (e) { console.error("Error parsing product_colors for image", e); }
+    }
+
+    return null;
+  };
+
   const rawImages = useMemo(() => {
     if (!product) return [];
     let imgs = [product.image];
     try {
+      // Main images
       if (product.images) {
         imgs = typeof product.images === 'string'
           ? JSON.parse(product.images)
           : (Array.isArray(product.images) ? product.images : [product.image]);
       }
+
+      // Add Product Colors images if they exist
+      if (product.product_colors) {
+        const colors = typeof product.product_colors === 'string' ? JSON.parse(product.product_colors) : product.product_colors;
+        if (Array.isArray(colors)) {
+          const colorImgs = colors.map(c => c.image).filter(Boolean);
+          imgs = [...imgs, ...colorImgs];
+        }
+      }
     } catch (error) {
       imgs = [product.image];
     }
-    return imgs.filter(Boolean);
+    // De-dupe
+    return [...new Set(imgs.filter(Boolean))];
   }, [product]);
 
   const images = useMemo(() => {
-    const variantImages = product?.variants?.map(v => v.image).filter(Boolean) || [];
+    const variantImages = product?.variants?.map(v => getVariantImage(v)).filter(Boolean) || [];
     const uniqueVariantImages = variantImages.filter(img => !rawImages.includes(img));
 
     // Combine rawImages + uniqueVariantImages
@@ -172,8 +201,9 @@ export default function ProductDetail({ params }) {
 
   // Auto-switch image when variant selected
   useEffect(() => {
-    if (selectedVariant?.image) {
-      const idx = images.indexOf(selectedVariant.image);
+    const vImg = getVariantImage(selectedVariant);
+    if (vImg) {
+      const idx = images.indexOf(vImg);
       if (idx !== -1) setSelectedImage(idx);
     }
   }, [selectedVariant, images]);
@@ -209,10 +239,10 @@ export default function ProductDetail({ params }) {
     addToCart({
       ...product,
       product_id: product.id,
-      id: selectedVariant ? selectedVariant.id : product.id, // Use variant ID if selected? Or keep product ID and add variant_id? Usually Cart item needs unique ID.
+      id: selectedVariant ? selectedVariant.id : product.id,
       variant_id: selectedVariant?.id,
       price: selectedVariant ? selectedVariant.price : product.price,
-      image: selectedVariant?.image || product.image,
+      image: getVariantImage(selectedVariant) || product.image,
       sku: selectedVariant?.sku || product.sku,
       quantity,
       selectedOptions
@@ -226,7 +256,7 @@ export default function ProductDetail({ params }) {
       id: selectedVariant ? selectedVariant.id : product.id,
       variant_id: selectedVariant?.id,
       price: selectedVariant ? selectedVariant.price : product.price,
-      image: selectedVariant?.image || product.image,
+      image: getVariantImage(selectedVariant) || product.image,
       sku: selectedVariant?.sku || product.sku,
       quantity,
       selectedOptions
@@ -365,25 +395,120 @@ export default function ProductDetail({ params }) {
                 {/* Selectors */}
                 {/* Dynamic Options */}
                 <div className="space-y-4">
-                  {parsedOptions.map((option, idx) => (
-                    <div key={idx}>
-                      <h3 className="font-bold text-gray-900 mb-3">{option.name}</h3>
-                      <div className="flex flex-wrap gap-3">
-                        {option.values.map((val) => (
-                          <button
-                            key={val}
-                            onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
-                            className={`px-4 py-2 rounded-xl border transition-all ${selectedOptions[option.name] === val
-                              ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-500'
-                              : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                              }`}
-                          >
-                            {val}
-                          </button>
-                        ))}
+                  {/* explicit Available Colors from Metadata if not in Options */}
+                  {(() => {
+                    const productColors = (() => {
+                      try {
+                        return typeof product.product_colors === 'string'
+                          ? JSON.parse(product.product_colors)
+                          : product.product_colors;
+                      } catch (e) { return []; }
+                    })();
+
+                    const hasColorOption = parsedOptions.some(o => o.name.toLowerCase() === 'color');
+
+                    if (!hasColorOption && Array.isArray(productColors) && productColors.length > 0) {
+                      const activeColor = productColors.find(c => images[selectedImage] === c.image);
+                      return (
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-3">
+                            Available Colors:
+                          </h3>
+                          <div className="flex flex-wrap gap-3">
+                            {productColors.map((color, idx) => {
+                              const isSelected = images[selectedImage] === color.image;
+                              return (
+                                <button
+                                  key={idx}
+                                  onClick={() => {
+                                    if (color.image) {
+                                      const imgIdx = images.indexOf(color.image);
+                                      if (imgIdx !== -1) setSelectedImage(imgIdx);
+                                    }
+                                  }}
+                                  className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 ${isSelected
+                                    ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-500'
+                                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                    }`}
+                                  title={color.name}
+                                >
+                                  {/* Color Dot */}
+                                  <div
+                                    className="w-4 h-4 rounded-full border border-gray-200 shadow-sm"
+                                    style={{ backgroundColor: color.code || '#eee' }}
+                                  />
+                                  <span>{color.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
+
+                  {parsedOptions.map((option, idx) => {
+                    // Check if this option is 'Color' and if we can resolve hex codes from product_colors
+                    const isColorOption = option.name.toLowerCase() === 'color'; // Simple check, or check vs product_colors keys
+                    const productColors = (() => {
+                      try {
+                        return typeof product.product_colors === 'string'
+                          ? JSON.parse(product.product_colors)
+                          : product.product_colors;
+                      } catch (e) { return []; }
+                    })();
+
+                    return (
+                      <div key={idx}>
+                        <h3 className="font-bold text-gray-900 mb-3">
+                          {option.name}: <span className="font-normal text-gray-600">{selectedOptions[option.name]}</span>
+                        </h3>
+                        <div className="flex flex-wrap gap-3">
+                          {option.values.map((val) => {
+                            let hexCode = null;
+                            if (isColorOption && Array.isArray(productColors)) {
+                              const matched = productColors.find(c => c.name === val);
+                              if (matched && matched.code) hexCode = matched.code;
+                            }
+
+                            const isSelected = selectedOptions[option.name] === val;
+
+                            if (hexCode) {
+                              return (
+                                <button
+                                  key={val}
+                                  onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
+                                  className={`w-10 h-10 rounded-full border-2 transition-all relative flex items-center justify-center ${isSelected
+                                    ? 'border-orange-500 scale-110 shadow-sm'
+                                    : 'border-transparent hover:scale-110 ring-1 ring-gray-200'
+                                    }`}
+                                  title={val}
+                                  style={{ backgroundColor: hexCode }}
+                                >
+                                  {isSelected && (
+                                    <div className={`w-2 h-2 rounded-full ${['#ffffff', '#fff', 'white'].includes(hexCode.toLowerCase()) ? 'bg-gray-400' : 'bg-white'}`} />
+                                  )}
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <button
+                                key={val}
+                                onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
+                                className={`px-4 py-2 rounded-xl border transition-all ${isSelected
+                                  ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-500'
+                                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                  }`}
+                              >
+                                {val}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Actions */}

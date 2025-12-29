@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import api from '../lib/api';
+import { ChromePicker } from 'react-color';
 
 import ErrorModal from './ErrorModal';
 import DuplicateSlugModal from './DuplicateSlugModal';
 import ImageUpload from './ImageUpload';
-import { Loader2, Save, ArrowLeft, Trash2, Plus } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Plus, X, Image as ImageIcon } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -22,10 +23,14 @@ export default function ProductForm({ initialData, isEdit }) {
     const [options, setOptions] = useState(initialData?.options ? [] : [{ name: 'Color', values: [] }]);
     const [errorModal, setErrorModal] = useState({ isOpen: false, errors: null });
     const [slugModalOpen, setSlugModalOpen] = useState(false);
+    const [openColorPicker, setOpenColorPicker] = useState(null);
     const [pendingSaveRedirect, setPendingSaveRedirect] = useState(null);
 
     const [images, setImages] = useState([]); // Unified state: { type: 'existing'|'new', url: string, file?: File }
     const [specs, setSpecs] = useState([]);
+
+    // Product Colors State
+    const [productColors, setProductColors] = useState([]); // [{ name: '', image: '', image_file: null }]
 
     const [formData, setFormData] = useState({
         name: '',
@@ -43,7 +48,11 @@ export default function ProductForm({ initialData, isEdit }) {
         is_new: false,
         is_preorder: false,
         features: '',
-        specifications: '{}'
+        is_new: false,
+        is_preorder: false,
+        features: '',
+        specifications: '{}',
+        product_colors: []
     });
 
     useEffect(() => {
@@ -88,6 +97,15 @@ export default function ProductForm({ initialData, isEdit }) {
             }
             if (initialData.variants) {
                 setVariants(initialData.variants);
+            }
+            if (initialData.product_colors) {
+                // Ensure array
+                try {
+                    const pcs = typeof initialData.product_colors === 'string' ? JSON.parse(initialData.product_colors) : initialData.product_colors;
+                    if (Array.isArray(pcs)) {
+                        setProductColors(pcs.map(c => ({ ...c, image_file: null })));
+                    }
+                } catch (e) { console.error("Error parsing product_colors", e); }
             }
             if (initialData.options) {
                 try {
@@ -187,11 +205,27 @@ export default function ProductForm({ initialData, isEdit }) {
             });
 
             // Append Variant Images
+            // Append Variant Images
             variants.forEach((variant, index) => {
                 if (variant.image_file) {
                     formDataObj.append(`variant_images[${index}]`, variant.image_file);
                 }
             });
+
+            // Append Product Colors
+            if (productColors.length > 0) {
+                formDataObj.append('product_colors', JSON.stringify(productColors.map(c => ({
+                    name: c.name,
+                    image: c.image, // Keep existing URL string if no new file
+                    code: c.code // Hex code
+                }))));
+
+                productColors.forEach((color, index) => {
+                    if (color.image_file) {
+                        formDataObj.append(`color_images[${index}]`, color.image_file);
+                    }
+                });
+            }
 
             const config = { headers: { 'Content-Type': 'multipart/form-data' } };
 
@@ -242,32 +276,7 @@ export default function ProductForm({ initialData, isEdit }) {
         const randomSuffix = Math.random().toString(36).substring(2, 7);
         const newSlug = `${formData.slug}-${randomSuffix}`;
 
-        // Update state and retry save immediately
-        // We need to use updated state for save, so bestway is setting it and calling save in useEffect or passing passed data?
-        // Since setState is async, we can't just call saveProduct() immediately with state.
-        // We will modify formData directly for the retry call logic if we refactored saveProduct to accept data.
-        // But simpler: update state, and just re-call save logic with patched internal data or just wait?
-        // Let's manually update formData state AND call save with the NEW slug override if we change saveProduct to accept override.
-        // Or simpler: Just update state and use a timeout/effect? No.
-
-        // Best approach: Modifying saveProduct to accept an optional data override object would be cleanest,
-        // but let's just update formData and then call a modified internal save helper.
-        // Actually, easiest is to setFormData and then trigger specific logic.
-
-        // Let's implement immediate recursive call with patched data:
-        // We will pass the new slug to saveProduct? No, saveProduct reads from state.
-
-        // Let's update state and blindly try again? No, state update is slow.
-        // Let's manually path it in the object we send?
-        // We need to refactor saveProduct slightly or duplicate the Logic?
-        // Refactoring saveProduct to use current `formData` from CLOSURE vs State is tricky.
-
-        // Let's do this:
         setFormData(prev => ({ ...prev, slug: newSlug }));
-
-        // Hacky but works: We need to wait for state update? or just push the new slug into the request?
-        // Let's use a specialized effect or just pass "overrideSlug" to saveProduct?
-        // Let's add an argument to saveProduct: `overrideData = null`
         saveProduct(pendingSaveRedirect, { slug: newSlug });
         setSlugModalOpen(false);
     };
@@ -337,31 +346,87 @@ export default function ProductForm({ initialData, isEdit }) {
         }
     };
 
+    const handleAddProductColor = () => {
+        setProductColors([...productColors, { name: '', image: '', image_file: null, code: '#000000' }]);
+    };
+
+    const handleRemoveProductColor = (index) => {
+        setProductColors(productColors.filter((_, i) => i !== index));
+    };
+
+    const handleProductColorChange = (index, field, value) => {
+        const newColors = [...productColors];
+        newColors[index][field] = value;
+        setProductColors(newColors);
+    };
+
     const generateVariants = () => {
-        if (options.length === 0) return;
+        // We combine Product Colors and Options
+        // If Product Colors exist, we MUST treat 'Color' as an option dimension.
+        // We will synthetically add 'Color' option to the Cartesian mix if productColors > 0.
 
-        const cartesian = (...a) => a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
-
+        // Filter out empty options first
         const validOptions = options.filter(opt => opt.name && opt.values.length > 0);
-        if (validOptions.length === 0) return;
 
-        const combinations = cartesian(...validOptions.map(opt => opt.values));
+        let dimensions = validOptions;
+        let colorValues = [];
 
-        // Adjust logic for single option:
-        let finalCombinations = combinations;
-        if (validOptions.length === 1) {
-            finalCombinations = validOptions[0].values.map(v => [v]);
+        if (productColors.length > 0) {
+            // Verify if 'Color' option already exists? 
+            // The prompt implies we replace generic Color logic or integrate.
+            // "Variations should be generated as a combination of each available COLOR ... and each of its OTHER existing... attributes."
+            // So we take productColors names as the 'Color' dimension.
+            colorValues = productColors.map(c => c.name).filter(Boolean);
+
+            // If user also added a generic 'Color' option in the list, we probably should override/ignore or warn?
+            // For safety, let's treat productColors as THE source for Color dimension.
+            // We'll create a synthetic dimension for calculations.
+
+            // Remove any existing 'Color' option from manual options to avoid duplicate/conflict
+            dimensions = dimensions.filter(d => d.name.toLowerCase() !== 'color');
+
+            // Prepend Colors dimension
+            if (colorValues.length > 0) {
+                // Add to beginning
+                const colorDim = { name: 'Color', values: colorValues };
+                dimensions = [colorDim, ...dimensions];
+            }
         }
 
-        const newVariants = finalCombinations.map(combo => {
-            // Map values to keys
+        if (dimensions.length === 0) return;
+
+        const cartesian = (...a) => a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
+        const combinations = dimensions.length === 1
+            ? dimensions[0].values.map(v => [v])
+            : cartesian(...dimensions.map(d => d.values));
+
+        const newVariants = combinations.map(combo => {
             const attributes = {};
+            let colorName = null;
+
             combo.forEach((val, idx) => {
-                attributes[validOptions[idx].name] = val;
+                const dimName = dimensions[idx].name;
+                attributes[dimName] = val;
+                if (dimName === 'Color') colorName = val;
             });
 
-            // Generate basic SKU suggestion
+            // Generate SKU
             const skuSuffix = combo.join('-').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+
+            // Resolve Image
+            // "Variations must not store a copy ... reference matched color object"
+            // However, visually in ADMIN table, we might want to show it?
+            // User says "Variations must REFERENCE... dynamically from parent".
+            // So we don't save 'image' in database for variant? Or we save it as cache?
+            // Requirement: "Variations must not store a copy... Instead... reference".
+            // So we should NOT set variant.image hardcoded if it comes from Color.
+            // But wait, what if variant image is DIFFERENT? (e.g. Red Small specific image?)
+            // Requirement says "If administrator updates color image... all variations... must automatically display new image".
+            // This implies we should propagate it OR leave variant image empty and resolve at runtime.
+            // But for standard variants (Size), the image IS the color image.
+
+            // Let's set variation_color_name.
+            // And Visual preview in table can show the linked color image.
 
             return {
                 attributes,
@@ -370,11 +435,16 @@ export default function ProductForm({ initialData, isEdit }) {
                 sku: `${formData.sku}-${skuSuffix}`,
                 original_price: formData.original_price,
                 is_active: true,
-                is_preorder: !!formData.is_preorder
+                is_preorder: !!formData.is_preorder,
+                variation_color_name: colorName,
+                image: null, // explicit null so it falls back to dynamic color lookup? 
+                // Or should we prepopulate for convenience but not save?
+                // The frontend/backend synchronization relies on `variation_color_name`.
             };
         });
 
         setVariants(newVariants);
+        toast.success(`${newVariants.length} variants generated successfully.`);
     };
 
     const handleVariantChange = (index, field, value) => {
@@ -796,62 +866,204 @@ export default function ProductForm({ initialData, isEdit }) {
                         </div>
                     </div>
 
-                    {/* Variations */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-lg font-semibold text-gray-900">Variations</h3>
-                            <button
-                                type="button"
-                                onClick={handleAddOption}
-                                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                            >
-                                <Plus className="w-4 h-4" /> Add
-                            </button>
-                        </div>
 
-                        <div className="space-y-3">
-                            {options.map((option, index) => (
-                                <div key={index} className="bg-gray-50 p-3 rounded-lg space-y-2 relative group">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveOption(index)}
-                                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                    <input
-                                        type="text"
-                                        placeholder="Name (e.g. Color)"
-                                        value={option.name}
-                                        onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
-                                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Values (comma separated)"
-                                        value={option.values.join(', ')}
-                                        onChange={(e) => handleOptionChange(index, 'values', e.target.value)}
-                                        className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                            ))}
-                            {options.length === 0 && (
-                                <p className="text-sm text-gray-500 italic text-center py-2">No variations added</p>
-                            )}
-
-                            {options.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={generateVariants}
-                                    className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors mt-4"
-                                >
-                                    Generate Variants from Options
-                                </button>
-                            )}
-                        </div>
-                    </div>
 
                 </div>
+            </div>
+
+            {/* Variation Creator */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                {/* Product Colors */}
+                <div className="bg-white p-6 lg:col-span-3 space-y-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold text-gray-900">Product Colors</h3>
+                        <button
+                            type="button"
+                            onClick={handleAddProductColor}
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                            <Plus className="w-4 h-4" /> Add Color
+                        </button>
+                    </div>
+                    <div className="space-y-4">
+                        {/* Header Row */}
+                        {productColors.length > 0 && (
+                            <div className="grid grid-cols-5 gap-4 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div className="col-span-1">Color Name</div>
+                                <div className="col-span-1">Hex</div>
+                                <div className="col-span-2">Image</div>
+                                <div className="col-span-1"></div>
+                            </div>
+                        )}
+
+                        {productColors.map((color, index) => {
+                            const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(color.code || '');
+
+                            return (
+                                <div key={index} className="grid grid-cols-5 gap-4 items-start bg-gray-50 p-3 rounded-xl border border-gray-100 transition-all hover:shadow-md hover:border-gray-200">
+                                    {/* Name Input */}
+                                    <div className="col-span-1">
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Midnight Blue"
+                                            value={color.name}
+                                            onChange={(e) => handleProductColorChange(index, 'name', e.target.value)}
+                                            className="block w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-700 placeholder:font-normal"
+                                        />
+                                    </div>
+
+                                    {/* Color Picker & Hex */}
+                                    <div className="col-span-1 relative">
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <div
+                                                    className="w-10 h-10 rounded-lg border-2 border-white shadow-sm ring-1 ring-gray-200 cursor-pointer hover:scale-105 transition-transform"
+                                                    style={{ backgroundColor: isValidHex ? color.code : '#000000' }}
+                                                    onClick={() => setOpenColorPicker(openColorPicker === index ? null : index)}
+                                                    title="Click to pick color"
+                                                />
+                                                {openColorPicker === index && (
+                                                    <div className="absolute top-12 left-0 z-50 animate-in fade-in zoom-in duration-200">
+                                                        <div
+                                                            className="fixed inset-0"
+                                                            onClick={() => setOpenColorPicker(null)}
+                                                        />
+                                                        <div className="relative shadow-xl rounded-lg overflow-hidden">
+                                                            <ChromePicker
+                                                                color={isValidHex ? color.code : '#000000'}
+                                                                onChange={(c) => handleProductColorChange(index, 'code', c.hex)}
+                                                                disableAlpha={true}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Image Upload */}
+                                    <div className="col-span-2">
+                                        {color.image ? (
+                                            <div className="flex items-center gap-3 bg-white p-1.5 rounded-lg border border-gray-200">
+                                                <div className="h-8 w-8 rounded overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
+                                                    <img src={color.image} alt={color.name} className="h-full w-full object-cover" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs text-gray-500 truncate">Image set</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleProductColorChange(index, 'image', null)}
+                                                    className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-colors"
+                                                    title="Remove image"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className="flex items-center justify-center w-full h-10 px-3 transition bg-white border border-gray-300 border-dashed rounded-lg appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
+                                                <div className="flex items-center space-x-2">
+                                                    <ImageIcon className="w-4 h-4 text-gray-400" />
+                                                    <span className="text-xs text-gray-500">Upload</span>
+                                                </div>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        if (file) {
+                                                            handleProductColorChange(index, 'image_file', file);
+                                                            handleProductColorChange(index, 'image', URL.createObjectURL(file));
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
+
+                                    {/* Delete Action */}
+                                    <div className="col-span-1 flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveProductColor(index)}
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            title="Remove Color"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {productColors.length === 0 && (
+                            <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                <div className="bg-white p-3 rounded-full shadow-sm w-fit mx-auto mb-3">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500" />
+                                </div>
+                                <p className="text-sm font-medium text-gray-900">No colors added yet</p>
+                                <p className="text-xs text-gray-500 mt-1">Add specific colors to enable visual switching.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Variations */}
+                <div className="bg-white p-6 lg:col-span-2 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold text-gray-900">Variations</h3>
+                        <button
+                            type="button"
+                            onClick={handleAddOption}
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                            <Plus className="w-4 h-4" /> Add
+                        </button>
+                    </div>
+
+                    <div className="space-y-3">
+                        {options.map((option, index) => (
+                            <div key={index} className="bg-gray-50 p-3 rounded-lg space-y-2 relative group">
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveOption(index)}
+                                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                                <input
+                                    type="text"
+                                    placeholder="Name (e.g. Color)"
+                                    value={option.name}
+                                    onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
+                                    className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Values (comma separated)"
+                                    value={option.values.join(', ')}
+                                    onChange={(e) => handleOptionChange(index, 'values', e.target.value)}
+                                    className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        ))}
+                        {options.length === 0 && (
+                            <p className="text-sm text-gray-500 italic text-center py-2">No variations added</p>
+                        )}
+
+                        {options.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={generateVariants}
+                                className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors mt-4"
+                            >
+                                Generate Variants from Options
+                            </button>
+                        )}
+                    </div>
+                </div>
+
             </div>
 
             {/* Generated Variants List */}
@@ -903,10 +1115,16 @@ export default function ProductForm({ initialData, isEdit }) {
                                             />
                                         </td>
                                         <td className="px-4 py-3">
-                                            {variant.image ? (
+                                            {variant.image || (variant.variation_color_name && productColors.find(c => c.name === variant.variation_color_name)?.image) ? (
                                                 <div className="flex items-center gap-2">
-                                                    <img src={variant.image} alt="Variant" className="w-8 h-8 object-cover rounded" />
-                                                    <button type="button" onClick={() => handleVariantChange(index, 'image', null)} className="text-red-500 text-xs">Remove</button>
+                                                    <img src={variant.image || productColors.find(c => c.name === variant.variation_color_name)?.image} alt="Variant" className="w-8 h-8 object-cover rounded" />
+                                                    {/* We only show remove if it's an override image. If it's linked color image, can we remove/detach? 
+                                                        User requirement: 'Must reference'. So if color linked, maybe show lock icon? 
+                                                        For simplicity, if linked to color, we show it. If user uploads specific override, we show that.
+                                                    */}
+                                                    {variant.image && (
+                                                        <button type="button" onClick={() => handleVariantChange(index, 'image', null)} className="text-red-500 text-xs">Reset</button>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <input

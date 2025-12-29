@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import Image from 'next/image';
 import { ShoppingCart } from 'lucide-react';
+import { useState } from 'react';
 
 export function ProductCardSkeleton() {
   return (
@@ -19,6 +20,7 @@ export function ProductCardSkeleton() {
 
 export default function ProductCard({ product, isSkeleton = false }) {
   const { addToCart } = useCart();
+  const [activeImage, setActiveImage] = useState(null);
 
   if (isSkeleton) return <ProductCardSkeleton />;
   if (!product) return null;
@@ -59,7 +61,7 @@ export default function ProductCard({ product, isSkeleton = false }) {
         )}
 
         <Image
-          src={mainImage}
+          src={activeImage || mainImage}
           alt={product.name}
           fill
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -80,7 +82,7 @@ export default function ProductCard({ product, isSkeleton = false }) {
         </button>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <h3 className="font-medium text-gray-900 text-base group-hover:text-blue-600 transition-colors truncate">
           {product.name}
         </h3>
@@ -94,6 +96,41 @@ export default function ProductCard({ product, isSkeleton = false }) {
             </p>
           )}
         </div>
+
+        {/* Product Colors */}
+        {(() => {
+          try {
+            const colors = typeof product.product_colors === 'string'
+              ? JSON.parse(product.product_colors)
+              : product.product_colors;
+
+            if (Array.isArray(colors) && colors.length > 0) {
+              return (
+                <div className="flex flex-wrap gap-1.5 pt-1" onClick={(e) => e.preventDefault()}>
+                  {colors.slice(0, 5).map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-4 h-4 rounded-full border border-gray-200 overflow-hidden relative cursor-pointer hover:scale-110 transition-transform hover:border-gray-400"
+                      title={color.name}
+                      onMouseEnter={() => {
+                        if (color.image) setActiveImage(color.image);
+                      }}
+                      onMouseLeave={() => setActiveImage(null)}
+                      style={{ backgroundColor: color.code || undefined }}
+                    >
+                      <div className="w-full h-full" style={{ backgroundColor: color.code || undefined }} />
+                    </div>
+                  ))}
+                  {colors.length > 5 && (
+                    <span className="text-[10px] text-gray-400 flex items-center">+{colors.length - 5}</span>
+                  )}
+                </div>
+              );
+            }
+          } catch (e) {
+            return null;
+          }
+        })()}
       </div>
     </Link>
   );

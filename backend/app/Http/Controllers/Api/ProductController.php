@@ -211,7 +211,10 @@ class ProductController extends Controller
             'is_new' => 'boolean',
             'is_preorder' => 'boolean',
             'options' => 'nullable|json',
+            'is_preorder' => 'boolean',
+            'options' => 'nullable|json',
             'variants' => 'nullable|json',
+            'product_colors' => 'nullable', // Array or JSON
         ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -254,6 +257,38 @@ class ProductController extends Controller
             }
         }
 
+        // Handle Product Colors Uploads
+        // Frontend sends: names[], color_images[] (files), existing_color_images (urls, if applicable but store is usually new)
+        // Actually, easiest is frontend JSON with metadata + separate files.
+        // Let's assume standard 'product_colors' JSON + 'color_image_files' array?
+        // Or similar to variants logic.
+        // Let's assume 'product_colors' is JSON: [{name: 'Red', temp_id: 1}, ...]
+        // And files are color_images[1] = file.
+        
+        $finalColors = [];
+        if ($request->has('product_colors')) {
+            $colorsInput = json_decode($request->product_colors, true);
+            if (is_array($colorsInput)) {
+                foreach ($colorsInput as $index => $colorData) {
+                    // Check for file
+                    if ($request->hasFile("color_images.$index")) {
+                        $path = $request->file("color_images.$index")->store('products/colors', 'public');
+                        $colorData['image'] = asset('storage/' . $path);
+                    }
+                    // If no file, check if image is already a URL (rare for create, but possible if reused or similar)
+                    
+                    // Remove temp keys if any
+                    // Keep robust structure: { name: "Red", image: "http..." }
+                    $finalColors[] = [
+                        'name' => $colorData['name'],
+                        'image' => $colorData['image'] ?? null,
+                        'code' => $colorData['code'] ?? null
+                    ];
+                }
+            }
+        }
+        $data['product_colors'] = $finalColors;
+
         $product = Product::create($data);
 
         // Handle Variants
@@ -265,6 +300,9 @@ class ProductController extends Controller
                     if ($request->hasFile("variant_images.$index")) {
                         $path = $request->file("variant_images.$index")->store('products', 'public');
                         $variantData['image'] = asset('storage/' . $path);
+                    }
+                    if (isset($variantData['variation_color_name'])) {
+                         // Ensure it's passed through
                     }
                     $product->variants()->create($variantData);
                }
@@ -303,6 +341,7 @@ class ProductController extends Controller
             'is_preorder' => 'boolean',
             'options' => 'nullable|json',
             'variants' => 'nullable|json',
+            'product_colors' => 'nullable', 
         ]);
 
 
@@ -362,6 +401,33 @@ class ProductController extends Controller
             } else {
                 $data['image'] = null;
             }
+        }
+
+        // Handle Product Colors (Update)
+        if ($request->has('product_colors')) {
+             $colorsInput = json_decode($request->product_colors, true);
+             $finalColors = [];
+             if (is_array($colorsInput)) {
+                 foreach ($colorsInput as $index => $colorData) {
+                     // Check for new file
+                     if ($request->hasFile("color_images.$index")) {
+                         $path = $request->file("color_images.$index")->store('products/colors', 'public');
+                         $colorData['image'] = asset('storage/' . $path);
+                     }
+                     // If existing image, it should be in $colorData['image'] string from frontend
+                     
+                     if (empty($colorData['image'])) {
+                         $colorData['image'] = null; // Explicit null if removed
+                     }
+
+                     $finalColors[] = [
+                         'name' => $colorData['name'],
+                         'image' => $colorData['image'],
+                         'code' => $colorData['code'] ?? null
+                     ];
+                 }
+             }
+             $data['product_colors'] = $finalColors;
         }
 
         $product->update($data);

@@ -27,6 +27,7 @@ class Product extends Model
         'new_arrival_order',
         'is_active',
         'options',
+        'product_colors',
     ];
 
     protected $casts = [
@@ -35,6 +36,7 @@ class Product extends Model
         'specifications' => 'array',
         'images' => 'array',
         'options' => 'array',
+        'product_colors' => 'array',
         'is_featured' => 'boolean',
         'is_new' => 'boolean',
         'is_preorder' => 'boolean',

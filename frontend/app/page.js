@@ -5,6 +5,8 @@ import ShopByCategories from '@/components/ShopByCategories';
 import ShopByBrands from '@/components/ShopByBrands';
 import NewArrivalsGrid from '@/components/NewArrivalsGrid';
 import FeaturedProductGrid from '@/components/FeaturedProductGrid';
+import FeaturesGrid from '@/components/FeaturesGrid';
+
 
 // Fetch data on server-side
 export const dynamic = 'force-dynamic';
@@ -59,6 +61,8 @@ export default async function Home() {
 
       <main className="pt-28">
         <HeroSection offers={offers} />
+
+        <FeaturesGrid />
 
         <ShopByCategories />
 

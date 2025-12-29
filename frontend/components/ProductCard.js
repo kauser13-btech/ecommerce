@@ -6,13 +6,21 @@ import Image from 'next/image';
 import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 
+/**
+ * Skeleton component for the ProductCard.
+ * Provides a visual placeholder while the actual product data is loading.
+ * The dimensions and styling are designed to closely match the final ProductCard
+ * to minimize layout shift and provide a smoother loading experience.
+ */
 export function ProductCardSkeleton() {
   return (
-    <div className="group block">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-200 animate-pulse mb-4" />
-      <div className="space-y-2">
-        <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-        <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4" />
+    <div className="group block border border-gray-200 rounded-2xl overflow-hidden">
+      {/* Image placeholder with matching aspect ratio and rounded corners */}
+      <div className="relative aspect-[1] overflow-hidden rounded-t-2xl bg-gray-200 animate-pulse mb-2" />
+      {/* Content area placeholder with matching padding and background */}
+      <div className="space-y-2 p-4 bg-gray-50">
+        <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4" /> {/* Placeholder for product title */}
+        <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3" /> {/* Placeholder for product price */}
       </div>
     </div>
   );
@@ -22,22 +30,71 @@ export default function ProductCard({ product, isSkeleton = false }) {
   const { addToCart } = useCart();
   const [activeImage, setActiveImage] = useState(null);
 
+  // Render skeleton if requested or if product data is not yet available
   if (isSkeleton) return <ProductCardSkeleton />;
   if (!product) return null;
 
   const handleAddToCart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); // Prevents the Link component from navigating
+    e.stopPropagation(); // Prevents event bubbling
     addToCart(product);
   };
 
-  // Determine main image
-  const mainImage = product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/placeholder.png');
+  // --- Data Preparation and Robustness ---
+  // Ensure prices are numbers before formatting to avoid "NaN" display
+  const currentPrice = Number(product.price);
+  const originalPrice = Number(product.original_price);
+  const isOnSale = originalPrice > currentPrice && !isNaN(currentPrice) && !isNaN(originalPrice);
+
+  // Determine the main product image URL, with a fallback to a placeholder
+  const mainImageUrl = product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/placeholder.png');
+
+  // --- Extracted Rendering Logic for Readability ---
+  /**
+   * Renders the color swatches for the product.
+   * Parses the product_colors data and handles potential errors.
+   */
+  const renderColorSwatches = () => {
+    try {
+      // Handle cases where product_colors might be a JSON string or already an object/array
+      const colors = typeof product.product_colors === 'string'
+        ? JSON.parse(product.product_colors)
+        : product.product_colors;
+
+      if (Array.isArray(colors) && colors.length > 0) {
+        return (
+          <div className="flex flex-wrap gap-1.5 pt-1 absolute bottom-3 left-3" onClick={(e) => e.preventDefault()}>
+            {colors.slice(0, 5).map((color) => (
+              <div
+                key={color.code || color.name} // Use a unique identifier for the key
+                className="w-4 h-4 rounded-full border border-gray-200 overflow-hidden relative cursor-pointer hover:scale-110 transition-transform hover:border-gray-400"
+                title={color.name}
+                onMouseEnter={() => {
+                  if (color.image) setActiveImage(color.image); // Set active image on hover
+                }}
+                onMouseLeave={() => setActiveImage(null)} // Reset active image when hover ends
+                style={{ backgroundColor: color.code || undefined }}
+              >
+                <div className="w-full h-full" style={{ backgroundColor: color.code || undefined }} />
+              </div>
+            ))}
+            {colors.length > 5 && (
+              <span className="text-[10px] text-gray-400 flex items-center">+{colors.length - 5}</span>
+            )}
+          </div>
+        );
+      }
+    } catch (error) {
+      // console.error("Failed to parse product_colors for product:", product.name, error);
+      return null; // Gracefully fallback if color data is malformed
+    }
+  };
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-100 mb-4">
-        {/* Badges Container */}
+    <Link href={`/products/${product.slug}`} className="group block border border-gray-200 rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-lg">
+      {/* Product Image Container */}
+      <div className="relative aspect-[1] overflow-hidden rounded-t-2xl">
+        {/* Badges for New, Pre-Order, and Sale */}
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 items-start">
           {product.is_new && (
             <span className="bg-black/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-md shadow-sm">
@@ -51,86 +108,56 @@ export default function ProductCard({ product, isSkeleton = false }) {
           )}
         </div>
 
-        {/* Badge: Sale (if original price > price) */}
-        {product.original_price > product.price && (
+        {isOnSale && (
           <div className="absolute top-3 right-3 z-10">
             <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-              - {Math.round(((product.original_price - product.price) / product.original_price) * 100)}%
+              - {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}%
             </span>
           </div>
         )}
 
         <Image
-          src={activeImage || mainImage}
+          src={activeImage || mainImageUrl} // Show color-specific image on hover, otherwise main image
           alt={product.name}
           fill
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          className="object-contain transition-opacity duration-300"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          priority={false}
         />
 
-        {/* Overlay with Add to Cart */}
+        {/* Subtle overlay on hover for visual depth */}
         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
+        {/* Color Swatches */}
+        {renderColorSwatches()}
+
+        {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
           disabled={!product.is_preorder && product.stock <= 0}
           className="absolute bottom-3 right-3 bg-white text-black p-2.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 z-20 hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           title={product.is_preorder ? "Pre-Order" : (product.stock <= 0 ? "Out of Stock" : "Add to Cart")}
+          aria-label={product.is_preorder ? "Pre-Order this item" : (product.stock <= 0 ? "This item is out of stock" : "Add this item to your cart")}
         >
           <ShoppingCart size={18} strokeWidth={2} />
         </button>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="font-medium text-gray-900 text-base group-hover:text-blue-600 transition-colors truncate">
+      {/* Product Information */}
+      <div className="space-y-2 p-4 bg-gray-50">
+        <h3 className="font-semibold text-gray-900 text-base group-hover:text-blue-600 transition-colors truncate">
           {product.name}
         </h3>
+
         <div className="flex items-center gap-2">
           <p className="text-gray-900 font-bold">
-            ৳ {Number(product.price).toLocaleString()}
+            ৳ {isNaN(currentPrice) ? 'N/A' : currentPrice.toLocaleString()}
           </p>
-          {product.original_price > product.price && (
+          {isOnSale && (
             <p className="text-gray-400 text-sm line-through decoration-gray-400/50">
-              ৳ {Number(product.original_price).toLocaleString()}
+              ৳ {originalPrice.toLocaleString()}
             </p>
           )}
         </div>
-
-        {/* Product Colors */}
-        {(() => {
-          try {
-            const colors = typeof product.product_colors === 'string'
-              ? JSON.parse(product.product_colors)
-              : product.product_colors;
-
-            if (Array.isArray(colors) && colors.length > 0) {
-              return (
-                <div className="flex flex-wrap gap-1.5 pt-1" onClick={(e) => e.preventDefault()}>
-                  {colors.slice(0, 5).map((color, idx) => (
-                    <div
-                      key={idx}
-                      className="w-4 h-4 rounded-full border border-gray-200 overflow-hidden relative cursor-pointer hover:scale-110 transition-transform hover:border-gray-400"
-                      title={color.name}
-                      onMouseEnter={() => {
-                        if (color.image) setActiveImage(color.image);
-                      }}
-                      onMouseLeave={() => setActiveImage(null)}
-                      style={{ backgroundColor: color.code || undefined }}
-                    >
-                      <div className="w-full h-full" style={{ backgroundColor: color.code || undefined }} />
-                    </div>
-                  ))}
-                  {colors.length > 5 && (
-                    <span className="text-[10px] text-gray-400 flex items-center">+{colors.length - 5}</span>
-                  )}
-                </div>
-              );
-            }
-          } catch (e) {
-            return null;
-          }
-        })()}
       </div>
     </Link>
   );

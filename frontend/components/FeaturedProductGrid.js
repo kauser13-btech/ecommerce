@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
 import ProductCard from './ProductCard';
 
 export default function FeaturedProductGrid({ featuredProducts = [] }) {

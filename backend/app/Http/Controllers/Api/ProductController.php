@@ -5,14 +5,192 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
-// ... (previous code)
+use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
-    // ... (index method same)
+    public function index(Request $request)
+    {
+        $query = Product::with(['category', 'brand'])->withCount('variants');
+        
+        if (!$request->boolean('include_inactive')) {
+             $query->where('is_active', true);
+        }
+
+        if ($request->has('category')) {
+            $categorySlug = $request->category;
+            $category = Category::where('slug', $categorySlug)->first();
+
+            if ($category) {
+                // Get ID of category and all its children
+                $ids = collect([$category->id]);
+                // For now, let's just get immediate children. 
+                // If we need deep recursion we can loop or use a recursive relationship method.
+                // Assuming 1-level nesting for now based on request "Apple -> iPhone".
+                $ids = $ids->merge($category->children()->pluck('id'));
+                
+                $query->whereIn('category_id', $ids);
+            } else {
+                // If category not found by slug, maybe just force empty or ignore?
+                // Let's keep original behavior: if slug invalid, returns empty.
+                $query->where('id', -1); 
+            }
+        }
+
+        if ($request->has('brand')) {
+            $query->whereHas('brand', function($q) use ($request) {
+                $q->where('slug', $request->brand);
+            });
+        }
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('filter') && $request->filter === 'new') {
+            $query->where('is_new', true);
+        }
+
+        if ($request->has('filter') && $request->filter === 'featured') {
+            $query->where('is_featured', true);
+        }
+
+        if ($request->has('sort')) {
+            switch ($request->sort) {
+                case 'featured':
+                    $query->orderBy('is_featured', 'desc');
+                    break;
+                case 'best-selling':
+                     // Placeholder: we don't have sales_count yet. 
+                     // Maybe sort by stock (sold out items last)? Or just random/popular?
+                     // Let's us created_at for now or if we had a 'views' column.
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                case 'title-asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'title-desc':
+                    $query->orderBy('name', 'desc');
+                    break;
+                case 'price-asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price-desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'date-asc':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+                case 'date-desc':
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                default:
+                    $query->latest();
+                    break;
+            }
+        } else {
+             $query->latest();
+        }
+
+        $products = $query->paginate(24); // Increased from 20 to 24 for better grid alignment (divisible by 2, 3, 4)
+
+        return response()->json($products);
+    }
+
+    public function show($slug)
+    {
+
+        $product = Product::with(['category', 'brand', 'variants'])
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        return response()->json($product);
+    }
+
+    public function featured()
+    {
+        $products = Product::with(['category', 'brand'])
+            ->where('is_featured', true)
+            ->where('is_active', true)
+            ->orderBy('featured_order', 'asc') // Added order
+            ->limit(8)
+            ->get();
+
+        return response()->json($products);
+    }
+
+    public function newArrivals()
+    {
+        $products = Product::with(['category', 'brand'])
+            ->where('is_new', true)
+            ->where('is_active', true)
+            ->orderBy('new_arrival_order', 'asc') // Added order
+            ->limit(8)
+            ->get();
+
+        return response()->json($products);
+    }
+    
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:products,id',
+            'items.*.order' => 'required|integer',
+            'type' => 'required|in:featured,new'
+        ]);
+
+        $column = $request->type === 'featured' ? 'featured_order' : 'new_arrival_order';
+
+        foreach ($request->items as $item) {
+            Product::where('id', $item['id'])->update([$column => $item['order']]);
+        }
+
+        return response()->json(['message' => 'Order updated successfully']);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('q', '');
+
+        $products = Product::with(['category', 'brand'])
+            ->where('is_active', true)
+            ->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%")
+                  ->orWhereHas('brand', function($b) use ($query) {
+                      $b->where('name', 'like', "%{$query}%");
+                  });
+            })
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        // Suggest products if not found
+        if ($products->isEmpty()) {
+            $suggestions = Product::with(['category', 'brand'])
+                ->where('is_active', true)
+                ->inRandomOrder()
+                ->limit(5)
+                ->get();
+            
+            return response()->json([
+                'data' => [],
+                'suggestions' => $suggestions,
+                'message' => 'No products found. You might like these instead.'
+            ]);
+        }
+
+        return response()->json(['data' => $products]);
+    }
 
     public function store(Request $request)
     {

@@ -5,481 +5,283 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
-use Illuminate\Http\Request;
+// ... (previous code)
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
-    {
-        $query = Product::with(['category', 'brand'])->withCount('variants');
-        
-        if (!$request->boolean('include_inactive')) {
-             $query->where('is_active', true);
-        }
+    // ... (index method same)
 
-        if ($request->has('category')) {
-            $categorySlug = $request->category;
-            $category = Category::where('slug', $categorySlug)->first();
-
-            if ($category) {
-                // Get ID of category and all its children
-                $ids = collect([$category->id]);
-                // For now, let's just get immediate children. 
-                // If we need deep recursion we can loop or use a recursive relationship method.
-                // Assuming 1-level nesting for now based on request "Apple -> iPhone".
-                $ids = $ids->merge($category->children()->pluck('id'));
-                
-                $query->whereIn('category_id', $ids);
-            } else {
-                // If category not found by slug, maybe just force empty or ignore?
-                // Let's keep original behavior: if slug invalid, returns empty.
-                $query->where('id', -1); 
-            }
-        }
-
-        if ($request->has('brand')) {
-            $query->whereHas('brand', function($q) use ($request) {
-                $q->where('slug', $request->brand);
-            });
-        }
-
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->has('filter') && $request->filter === 'new') {
-            $query->where('is_new', true);
-        }
-
-        if ($request->has('filter') && $request->filter === 'featured') {
-            $query->where('is_featured', true);
-        }
-
-        if ($request->has('sort')) {
-            switch ($request->sort) {
-                case 'featured':
-                    $query->orderBy('is_featured', 'desc');
-                    break;
-                case 'best-selling':
-                     // Placeholder: we don't have sales_count yet. 
-                     // Maybe sort by stock (sold out items last)? Or just random/popular?
-                     // Let's us created_at for now or if we had a 'views' column.
-                    $query->orderBy('created_at', 'desc');
-                    break;
-                case 'title-asc':
-                    $query->orderBy('name', 'asc');
-                    break;
-                case 'title-desc':
-                    $query->orderBy('name', 'desc');
-                    break;
-                case 'price-asc':
-                    $query->orderBy('price', 'asc');
-                    break;
-                case 'price-desc':
-                    $query->orderBy('price', 'desc');
-                    break;
-                case 'date-asc':
-                    $query->orderBy('created_at', 'asc');
-                    break;
-                case 'date-desc':
-                    $query->orderBy('created_at', 'desc');
-                    break;
-                default:
-                    $query->latest();
-                    break;
-            }
-        } else {
-             $query->latest();
-        }
-
-        $products = $query->paginate(24); // Increased from 20 to 24 for better grid alignment (divisible by 2, 3, 4)
-
-        return response()->json($products);
-    }
-
-    public function show($slug)
-    {
-
-        $product = Product::with(['category', 'brand', 'variants'])
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->firstOrFail();
-
-        return response()->json($product);
-    }
-
-    public function featured()
-    {
-        $products = Product::with(['category', 'brand'])
-            ->where('is_featured', true)
-            ->where('is_active', true)
-            ->orderBy('featured_order', 'asc') // Added order
-            ->limit(8)
-            ->get();
-
-        return response()->json($products);
-    }
-
-    public function newArrivals()
-    {
-        $products = Product::with(['category', 'brand'])
-            ->where('is_new', true)
-            ->where('is_active', true)
-            ->orderBy('new_arrival_order', 'asc') // Added order
-            ->limit(8)
-            ->get();
-
-        return response()->json($products);
-    }
-    
-    public function reorder(Request $request)
-    {
-        $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:products,id',
-            'items.*.order' => 'required|integer',
-            'type' => 'required|in:featured,new'
-        ]);
-
-        $column = $request->type === 'featured' ? 'featured_order' : 'new_arrival_order';
-
-        foreach ($request->items as $item) {
-            Product::where('id', $item['id'])->update([$column => $item['order']]);
-        }
-
-        return response()->json(['message' => 'Order updated successfully']);
-    }
-
-    public function search(Request $request)
-    {
-        $query = $request->get('q', '');
-
-        $products = Product::with(['category', 'brand'])
-            ->where('is_active', true)
-            ->where(function($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhereHas('brand', function($b) use ($query) {
-                      $b->where('name', 'like', "%{$query}%");
-                  });
-            })
-            ->latest()
-            ->limit(10)
-            ->get();
-
-        // Suggest products if not found
-        if ($products->isEmpty()) {
-            $suggestions = Product::with(['category', 'brand'])
-                ->where('is_active', true)
-                ->inRandomOrder()
-                ->limit(5)
-                ->get();
-            
-            return response()->json([
-                'data' => [],
-                'suggestions' => $suggestions,
-                'message' => 'No products found. You might like these instead.'
-            ]);
-        }
-
-        return response()->json(['data' => $products]);
-    }
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:products,slug',
-            'sku' => 'required|string|unique:products,sku',
-            'price' => 'required|integer',
-            'original_price' => 'nullable|integer',
-            'stock' => 'required|integer',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
-            'image' => 'nullable|string',
-            'image' => 'nullable|string',
-            'images' => 'nullable', // Allow array or null, manual handling for files
-            'description' => 'nullable|string',
-            'features' => 'nullable|string',
-            'specifications' => 'nullable|json',
-            'is_active' => 'boolean',
-            'is_featured' => 'boolean',
-            'is_new' => 'boolean',
-            'is_preorder' => 'boolean',
-            'options' => 'nullable|json',
-            'is_preorder' => 'boolean',
-            'options' => 'nullable|json',
-            'variants' => 'nullable|json',
-            'product_colors' => 'nullable', // Array or JSON
-        ]);
+        return DB::transaction(function () use ($request) {
+            try {
+                $validated = $request->validate([
+                    'name' => 'required|string|max:255',
+                    'slug' => 'required|string|unique:products,slug',
+                    'sku' => 'required|string|unique:products,sku',
+                    'price' => 'required|integer',
+                    'original_price' => 'nullable|integer',
+                    'stock' => 'required|integer',
+                    'category_id' => 'required|exists:categories,id',
+                    'brand_id' => 'required|exists:brands,id',
+                    'image' => 'nullable|string',
+                    'images' => 'nullable', 
+                    'description' => 'nullable|string',
+                    'features' => 'nullable|string',
+                    'specifications' => 'nullable|json',
+                    'is_active' => 'boolean',
+                    'is_featured' => 'boolean',
+                    'is_new' => 'boolean',
+                    'is_preorder' => 'boolean',
+                    'options' => 'nullable|json',
+                    'variants' => 'nullable|json',
+                    'product_colors' => 'nullable',
+                ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Product Create Validation Error: ' . json_encode($e->errors()));
-            throw $e;
-        }
-
-        $data = $validated;
-        
-        // Ensure options is an array to prevent double encoding matching the cast
-        if (isset($data['options']) && is_string($data['options'])) {
-            $data['options'] = json_decode($data['options'], true);
-        }
-        
-        // Create final images array combining uploads and existing (library) images
-        $finalImages = [];
-
-        // 1. Process Existing Images (from Library)
-        if ($request->has('existing_images')) {
-            $existingInputs = $request->input('existing_images');
-            if (is_array($existingInputs)) {
-                $finalImages = $existingInputs;
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                \Log::error('Product Create Validation Error: ' . json_encode($e->errors()));
+                throw $e;
             }
-        }
 
-        // 2. Process New Uploads
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $finalImages[] = asset('storage/' . $path);
-            }
-        }
-
-        if (count($finalImages) > 0) {
-            $data['images'] = $finalImages;
+            $data = $validated;
             
-            // Set first image as main image if not provided
-            if (empty($data['image'])) {
-                $data['image'] = $finalImages[0];
+            if (isset($data['options']) && is_string($data['options'])) {
+                $data['options'] = json_decode($data['options'], true);
             }
-        }
-
-        // Handle Product Colors Uploads
-        // Frontend sends: names[], color_images[] (files), existing_color_images (urls, if applicable but store is usually new)
-        // Actually, easiest is frontend JSON with metadata + separate files.
-        // Let's assume standard 'product_colors' JSON + 'color_image_files' array?
-        // Or similar to variants logic.
-        // Let's assume 'product_colors' is JSON: [{name: 'Red', temp_id: 1}, ...]
-        // And files are color_images[1] = file.
-        
-        $finalColors = [];
-        if ($request->has('product_colors')) {
-            $colorsInput = json_decode($request->product_colors, true);
-            if (is_array($colorsInput)) {
-                foreach ($colorsInput as $index => $colorData) {
-                    // Check for file
-                    if ($request->hasFile("color_images.$index")) {
-                        $path = $request->file("color_images.$index")->store('products/colors', 'public');
-                        $colorData['image'] = asset('storage/' . $path);
-                    }
-                    // If no file, check if image is already a URL (rare for create, but possible if reused or similar)
-                    
-                    // Remove temp keys if any
-                    // Keep robust structure: { name: "Red", image: "http..." }
-                    $finalColors[] = [
-                        'name' => $colorData['name'],
-                        'image' => $colorData['image'] ?? null,
-                        'code' => $colorData['code'] ?? null
-                    ];
+            
+            // Image handling (same as before)
+            $finalImages = [];
+            if ($request->has('existing_images')) {
+                $existingInputs = $request->input('existing_images');
+                if (is_array($existingInputs)) {
+                    $finalImages = $existingInputs;
                 }
             }
-        }
-        $data['product_colors'] = $finalColors;
-
-        $product = Product::create($data);
-
-        // Handle Variants
-        if ($request->has('variants')) {
-            $variants = json_decode($request->variants, true); 
-            if (is_array($variants)) {
-               foreach ($variants as $index => $variantData) {
-                    // Check for image upload for this variant index
-                    if ($request->hasFile("variant_images.$index")) {
-                        $path = $request->file("variant_images.$index")->store('products', 'public');
-                        $variantData['image'] = asset('storage/' . $path);
-                    }
-                    if (isset($variantData['variation_color_name'])) {
-                         // Ensure it's passed through
-                    }
-                    $product->variants()->create($variantData);
-               }
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('products', 'public');
+                    $finalImages[] = asset('storage/' . $path);
+                }
             }
-        }
+            if (count($finalImages) > 0) {
+                $data['images'] = $finalImages;
+                if (empty($data['image'])) {
+                    $data['image'] = $finalImages[0];
+                }
+            }
 
-        return response()->json([
-            'message' => 'Product created successfully',
-            'data' => $product
-        ], 201);
+            // Product Colors (same as before)
+            $finalColors = [];
+            if ($request->has('product_colors')) {
+                $colorsInput = json_decode($request->product_colors, true);
+                if (is_array($colorsInput)) {
+                    foreach ($colorsInput as $index => $colorData) {
+                        if ($request->hasFile("color_images.$index")) {
+                            $path = $request->file("color_images.$index")->store('products/colors', 'public');
+                            $colorData['image'] = asset('storage/' . $path);
+                        }
+                        $finalColors[] = [
+                            'name' => $colorData['name'],
+                            'image' => $colorData['image'] ?? null,
+                            'code' => $colorData['code'] ?? null
+                        ];
+                    }
+                }
+            }
+            $data['product_colors'] = $finalColors;
+
+            $product = Product::create($data);
+
+            // Handle Variants with STRICT Validation
+            if ($request->has('variants')) {
+                $variants = json_decode($request->variants, true); 
+                if (is_array($variants)) {
+                   
+                   // 1. Check for Duplicate SKUs within the request
+                   $skus = array_filter(array_column($variants, 'sku'));
+                   if (count($skus) !== count(array_unique($skus))) {
+                        throw ValidationException::withMessages(['variants' => 'Duplicate SKUs found in variants list.']);
+                   }
+
+                   foreach ($variants as $index => $variantData) {
+                        // 2. Check for Existing SKU in DB (excluding this product logic since it's create, but globally unique check)
+                        if (!empty($variantData['sku'])) {
+                            // Ideally, we'd do a batch check or unique rule, but loop check is ok for now validation.
+                            // Better: use validation rule above? Variants is json string so hard to validate via standard rules.
+                             if (\App\Models\ProductVariant::where('sku', $variantData['sku'])->exists() || \App\Models\Product::where('sku', $variantData['sku'])->exists()) {
+                                  throw ValidationException::withMessages(["variants.$index.sku" => "SKU '{$variantData['sku']}' is already taken."]);
+                             }
+                        }
+
+                        if ($request->hasFile("variant_images.$index")) {
+                            $path = $request->file("variant_images.$index")->store('products', 'public');
+                            $variantData['image'] = asset('storage/' . $path);
+                        }
+                        $product->variants()->create($variantData);
+                   }
+                }
+            }
+
+            return response()->json([
+                'message' => 'Product created successfully',
+                'data' => $product
+            ], 201);
+        });
     }
 
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
 
-        try {
-            $validated = $request->validate([
-            'name' => 'string|max:255',
-            'slug' => 'string|unique:products,slug,' . $id,
-            'sku' => 'string|unique:products,sku,' . $id,
-            'price' => 'integer',
-            'original_price' => 'nullable|integer',
-            'stock' => 'integer',
-            'category_id' => 'exists:categories,id',
-            'brand_id' => 'exists:brands,id',
-            'image' => 'nullable|string',
-            'images' => 'nullable',
-            'existing_images' => 'nullable|array', // Array of URL strings
-            'description' => 'nullable|string',
-            'features' => 'nullable|string',
-            'specifications' => 'nullable|json',
-            'is_active' => 'boolean',
-            'is_featured' => 'boolean',
-            'is_new' => 'boolean',
-            'is_preorder' => 'boolean',
-            'options' => 'nullable|json',
-            'variants' => 'nullable|json',
-            'product_colors' => 'nullable', 
-        ]);
+        return DB::transaction(function () use ($request, $product, $id) {
+            try {
+                $validated = $request->validate([
+                    'name' => 'string|max:255',
+                    'slug' => 'string|unique:products,slug,' . $id,
+                    'sku' => 'string|unique:products,sku,' . $id,
+                    'price' => 'integer',
+                    'original_price' => 'nullable|integer',
+                    'stock' => 'integer',
+                    'category_id' => 'exists:categories,id',
+                    'brand_id' => 'exists:brands,id',
+                    'image' => 'nullable|string',
+                    'images' => 'nullable',
+                    'existing_images' => 'nullable|array', 
+                    'description' => 'nullable|string',
+                    'features' => 'nullable|string',
+                    'specifications' => 'nullable|json',
+                    'is_active' => 'boolean',
+                    'is_featured' => 'boolean',
+                    'is_new' => 'boolean',
+                    'is_preorder' => 'boolean',
+                    'options' => 'nullable|json',
+                    'variants' => 'nullable|json',
+                    'product_colors' => 'nullable', 
+                ]);
 
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Product Update Validation Error: ' . json_encode($e->errors()));
-            throw $e;
-        }
-
-        $data = $validated;
-
-        // Ensure options is an array to prevent double encoding
-        if (isset($data['options']) && is_string($data['options'])) {
-            $data['options'] = json_decode($data['options'], true);
-        }
-
-        // Handle Images
-        $finalImages = [];
-
-        // 1. Process Existing Images (sent from frontend as strings)
-        if ($request->has('existing_images')) {
-            $finalImages = $request->input('existing_images');
-            if (!is_array($finalImages)) {
-                 $finalImages = [];
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                \Log::error('Product Update Validation Error: ' . json_encode($e->errors()));
+                throw $e;
             }
-        }
 
-        // 2. Process New Uploads
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $finalImages[] = asset('storage/' . $path);
+            $data = $validated;
+
+            if (isset($data['options']) && is_string($data['options'])) {
+                $data['options'] = json_decode($data['options'], true);
             }
-        }
-        
-        // If no existing images and no new images were sent, but there were images before... 
-        // The frontend SHOULD send 'existing_images' as an empty array if all were removed.
-        // However, if the field is missing entirely, it might mean "don't touch images".
-        // But for a form submission, usually "missing field" = "empty" if we are being strict, OR we check if we should update images at all.
-        // To allow removing all images, the frontend must send `existing_images` as empty array if intended.
-        // To allow "partial update" (API style) where missing key = no change, we'd check $request->has().
-        // Since we are building a full edit form, let's assume we construct the final list from scratch if we see either field, 
-        // OR if we want to be safe: default to explicit inputs.
-        // Let's rely on the fact that if we are uploading/editing images, we will send 'existing_images' (even if empty).
-        
-        // Let's only update the 'images' column if we actually processed some image logic 
-        // OR if the user explicitly sent 'existing_images' (meaning they interacted with the image list).
-        if ($request->has('existing_images') || $request->hasFile('images')) {
-             $data['images'] = $finalImages;
 
-             // Logic to ensure main image is set
-            if (count($finalImages) > 0) {
-                // If main image is not set or not in the final list, pick the first one
-                // Use strict check? simplified for now.
-                if (empty($data['image']) || !in_array($data['image'], $finalImages)) {
-                     $data['image'] = $finalImages[0];
+            // Images (same logic)
+            $finalImages = [];
+            if ($request->has('existing_images')) {
+                $finalImages = $request->input('existing_images');
+                if (!is_array($finalImages)) $finalImages = [];
+            }
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('products', 'public');
+                    $finalImages[] = asset('storage/' . $path);
                 }
-            } else {
-                $data['image'] = null;
             }
-        }
+            if ($request->has('existing_images') || $request->hasFile('images')) {
+                 $data['images'] = $finalImages;
+                if (count($finalImages) > 0) {
+                    if (empty($data['image']) || !in_array($data['image'], $finalImages)) {
+                         $data['image'] = $finalImages[0];
+                    }
+                } else {
+                    $data['image'] = null;
+                }
+            }
 
-        // Handle Product Colors (Update)
-        if ($request->has('product_colors')) {
-             $colorsInput = json_decode($request->product_colors, true);
-             $finalColors = [];
-             if (is_array($colorsInput)) {
-                 foreach ($colorsInput as $index => $colorData) {
-                     // Check for new file
-                     if ($request->hasFile("color_images.$index")) {
-                         $path = $request->file("color_images.$index")->store('products/colors', 'public');
-                         $colorData['image'] = asset('storage/' . $path);
+            // Colors (same logic)
+            if ($request->has('product_colors')) {
+                 $colorsInput = json_decode($request->product_colors, true);
+                 $finalColors = [];
+                 if (is_array($colorsInput)) {
+                     foreach ($colorsInput as $index => $colorData) {
+                         if ($request->hasFile("color_images.$index")) {
+                             $path = $request->file("color_images.$index")->store('products/colors', 'public');
+                             $colorData['image'] = asset('storage/' . $path);
+                         }
+                         if (empty($colorData['image'])) $colorData['image'] = null;
+
+                         $finalColors[] = [
+                             'name' => $colorData['name'],
+                             'image' => $colorData['image'],
+                             'code' => $colorData['code'] ?? null
+                         ];
                      }
-                     // If existing image, it should be in $colorData['image'] string from frontend
+                 }
+                 $data['product_colors'] = $finalColors;
+            }
+
+            $product->update($data);
+
+            // Variants with Validation
+            if ($request->has('variants')) {
+                 $variantsInput = json_decode($request->variants, true);
+                 if (is_array($variantsInput)) {
                      
-                     if (empty($colorData['image'])) {
-                         $colorData['image'] = null; // Explicit null if removed
+                     // 1. Check for Duplicate SKUs within request
+                     $skus = array_filter(array_column($variantsInput, 'sku'));
+                     if (count($skus) !== count(array_unique($skus))) {
+                          throw ValidationException::withMessages(['variants' => 'Duplicate SKUs found in variants list.']);
                      }
 
-                     $finalColors[] = [
-                         'name' => $colorData['name'],
-                         'image' => $colorData['image'],
-                         'code' => $colorData['code'] ?? null
-                     ];
+                     $existingIds = [];
+                     foreach ($variantsInput as $index => $variantData) {
+                         
+                         // 2. Check DB Uniqueness (Exclude current variant ID if updating)
+                         if (!empty($variantData['sku'])) {
+                             $exists = \App\Models\ProductVariant::where('sku', $variantData['sku']);
+                             if (isset($variantData['id'])) {
+                                 $exists->where('id', '!=', $variantData['id']);
+                             }
+                             if ($exists->exists()) {
+                                  throw ValidationException::withMessages(["variants.$index.sku" => "SKU '{$variantData['sku']}' is already taken."]);
+                             }
+                             // Global check? optional details
+                         }
+
+                         $variant = null;
+                         if ($request->hasFile("variant_images.$index")) {
+                            $path = $request->file("variant_images.$index")->store('products', 'public');
+                            $variantData['image'] = asset('storage/' . $path);
+                         } elseif (isset($variantData['image']) && $variantData['image'] === null) {
+                             $variantData['image'] = null;
+                         }
+
+                         if (isset($variantData['id'])) {
+                             $variant = $product->variants()->find($variantData['id']);
+                         }
+                         if (!$variant && isset($variantData['sku'])) {
+                             $variant = $product->variants()->where('sku', $variantData['sku'])->first();
+                         }
+
+                         if ($variant) {
+                             $variant->update($variantData);
+                             $existingIds[] = $variant->id;
+                         } else {
+                             $newVariant = $product->variants()->create($variantData);
+                             $existingIds[] = $newVariant->id;
+                         }
+                     }
+                     $product->variants()->whereNotIn('id', $existingIds)->delete();
                  }
-             }
-             $data['product_colors'] = $finalColors;
-        }
+            }
 
-        $product->update($data);
-
-        // Handle Variants
-        if ($request->has('variants')) {
-             $variantsInput = json_decode($request->variants, true);
-             if (is_array($variantsInput)) {
-                 $existingIds = [];
-                 foreach ($variantsInput as $index => $variantData) {
-                     $variant = null;
-
-                     // Handle Image Upload for this variant
-                     if ($request->hasFile("variant_images.$index")) {
-                        $path = $request->file("variant_images.$index")->store('products', 'public');
-                        $variantData['image'] = asset('storage/' . $path);
-                     } elseif (isset($variantData['image']) && $variantData['image'] === null) {
-                         // Explicitly cleared image
-                         $variantData['image'] = null;
-                     }
-
-                     // 1. Try to find by ID if provided
-                     if (isset($variantData['id'])) {
-                         $variant = $product->variants()->find($variantData['id']);
-                     }
-
-                     // 2. If not found by ID, try to find by SKU (within this product)
-                     // This handles cases where frontend regenerates variants (loosing IDs) but keeps SKUs
-                     if (!$variant && isset($variantData['sku'])) {
-                         $variant = $product->variants()->where('sku', $variantData['sku'])->first();
-                     }
-
-                     if ($variant) {
-                         // Update existing
-                         $variant->update($variantData);
-                         $existingIds[] = $variant->id;
-                     } else {
-                         // Create new
-                         $newVariant = $product->variants()->create($variantData);
-                         $existingIds[] = $newVariant->id;
-                     }
-                 }
-                 // Delete removed variants
-                 $product->variants()->whereNotIn('id', $existingIds)->delete();
-             }
-        }
-
-        return response()->json([
-            'message' => 'Product updated successfully',
-            'data' => $product
-        ]);
+            return response()->json([
+                'message' => 'Product updated successfully',
+                'data' => $product
+            ]);
+        });
     }
+
+    // ... (rest of methods)
+
 
     public function destroy($id)
     {

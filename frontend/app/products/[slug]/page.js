@@ -199,12 +199,18 @@ export default function ProductDetail({ params }) {
     setSelectedImage(0);
   }, [slug]);
 
-  // Auto-switch image when variant selected
+  // Unidirectional Sync: Variant -> Image
+  // When a variant is selected, update the gallery image if the variant has a specific image assigned.
+  // We explicitly DO NOT sync the other way (Image -> Variant) to allow users to browse images without changing selection.
   useEffect(() => {
+    if (!selectedVariant) return;
+
     const vImg = getVariantImage(selectedVariant);
     if (vImg) {
       const idx = images.indexOf(vImg);
-      if (idx !== -1) setSelectedImage(idx);
+      if (idx !== -1) {
+        setSelectedImage(idx);
+      }
     }
   }, [selectedVariant, images]);
 

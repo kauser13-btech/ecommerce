@@ -3,9 +3,9 @@
 const FeatureCard = ({ iconSrc, iconAlt, title, description }) => {
     return (
         <div
-            className="flex flex-col items-center text-center p-5 border border-gray-300 rounded-xl overflow-hidden w-full md:w-1/4"
+            className="flex flex-col items-center text-center p-5 border border-gray-300 rounded-xl overflow-hidden w-full h-full"
         >
-            <div className="flex flex-col items-center justify-center w-full gap-3">
+            <div className="flex flex-col items-center justify-center w-full gap-3 h-full">
                 <div className="flex justify-center items-center gap-1">
                     <img
                         src={iconSrc}
@@ -16,6 +16,7 @@ const FeatureCard = ({ iconSrc, iconAlt, title, description }) => {
                     />
                 </div>
                 <p className="font-bold text-lg"><strong>{title}</strong></p>
+                {description && <p className="text-sm text-gray-500">{description}</p>}
             </div>
         </div>
     );
@@ -46,10 +47,7 @@ export default function FeaturesGrid() {
     ];
 
     return (
-        <div
-            className="max-w-7xl mt-8 mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-6 md:gap-8"
-            style={{ gap: 'max(24px, calc(1.0 * 30px))' }}
-        >
+        <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
             {features.map((feature, index) => (
                 <FeatureCard
                     key={index}

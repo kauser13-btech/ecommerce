@@ -1006,27 +1006,33 @@ export default function ProductForm({ initialData, isEdit }) {
                                                             </p>
                                                         ) : (
                                                             <div className="grid grid-cols-4 gap-2">
-                                                                {images.map((img, imgIdx) => (
-                                                                    <div
-                                                                        key={imgIdx}
-                                                                        onClick={() => {
-                                                                            handleProductColorChange(index, 'image', img.url);
-                                                                            // Ideally we check if it is a 'new' file type and set image_file too if needed, 
-                                                                            // but 'image' url is enough for display and linking.
-                                                                            // If we want backend to know which FILE it matches, we might need logic.
-                                                                            // But usually backend matches by filename or we just send URL if it's existing. 
-                                                                            // Since we are "Linking", existing URL is fine. 
-                                                                            // For new files, the 'url' is blob, which backend won't know unless we upload it.
-                                                                            // But the main 'images' array will handle uploading.
-                                                                            // So we just need to ensure backend saves the 'image' string field of color.
-                                                                            setOpenColorPicker(null);
-                                                                        }}
-                                                                        className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:border-blue-500 hover:ring-2 hover:ring-blue-100 transition-all"
-                                                                        title="Use this image"
-                                                                    >
-                                                                        <img src={img.url} className="w-full h-full object-cover" />
-                                                                    </div>
-                                                                ))}
+                                                                {images
+                                                                    .filter(img => {
+                                                                        // Filter out images used by OTHER colors
+                                                                        const isUsedByOther = productColors.some((c, i) => i !== index && c.image === img.url);
+                                                                        return !isUsedByOther;
+                                                                    })
+                                                                    .map((img, imgIdx) => (
+                                                                        <div
+                                                                            key={imgIdx}
+                                                                            onClick={() => {
+                                                                                handleProductColorChange(index, 'image', img.url);
+                                                                                // Ideally we check if it is a 'new' file type and set image_file too if needed, 
+                                                                                // but 'image' url is enough for display and linking.
+                                                                                // If we want backend to know which FILE it matches, we might need logic.
+                                                                                // But usually backend matches by filename or we just send URL if it's existing. 
+                                                                                // Since we are "Linking", existing URL is fine. 
+                                                                                // For new files, the 'url' is blob, which backend won't know unless we upload it.
+                                                                                // But the main 'images' array will handle uploading.
+                                                                                // So we just need to ensure backend saves the 'image' string field of color.
+                                                                                setOpenColorPicker(null);
+                                                                            }}
+                                                                            className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:border-blue-500 hover:ring-2 hover:ring-blue-100 transition-all"
+                                                                            title="Use this image"
+                                                                        >
+                                                                            <img src={img.url} className="w-full h-full object-cover" />
+                                                                        </div>
+                                                                    ))}
                                                             </div>
                                                         )}
                                                         <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">

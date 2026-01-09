@@ -97,7 +97,7 @@ export default function Header() {
         }`}
     >
       {/* Topbar */}
-      <div className={`bg-gray-50 text-gray-600 transition-all duration-300 overflow-hidden border-b border-gray-100 ${isScrolled ? 'max-h-0' : 'max-h-10 py-2'}`}>
+      <div className={`bg-gray-200 text-gray-600 transition-all duration-300 overflow-hidden border-b border-gray-100 ${isScrolled ? 'max-h-0' : 'max-h-10 py-2'}`}>
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center text-xs">
           <div className="flex items-center gap-4">
             <a href="https://www.facebook.com/appleians" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 transition-colors">

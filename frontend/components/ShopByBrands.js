@@ -28,7 +28,7 @@ export default function ShopByBrands() {
 
     if (loading) {
         return (
-            <div className="w-full mt-12 mb-12">
+            <div className="w-full mt-12 mb-12 bg-gray-200">
                 <section className="max-w-7xl mx-auto px-4">
                     <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-8"></div>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
@@ -44,7 +44,7 @@ export default function ShopByBrands() {
     if (brands.length === 0) return null;
 
     return (
-        <section className="w-full py-12 bg-white">
+        <section className="w-full py-12 bg-gray-200">
             <div className="max-w-7xl mx-auto px-4">
                 <div className="text-center mb-10">
                     <h2 className="text-3xl font-bold">

@@ -12,7 +12,7 @@ export default function HeroSection({ offers }) {
     const sliderOffers = activeOffers.slice(2);
 
     return (
-        <section className="w-full py-6 lg:py-12">
+        <section className="w-full py-6 lg:py-12 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 lg:px-0 grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Stacked Pinned Offers (Takes 1 column on desktop) */}
                 <div className="lg:col-span-1 order-2 lg:order-1 flex flex-row lg:flex-col gap-4 lg:gap-6 h-full">

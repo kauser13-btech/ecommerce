@@ -47,7 +47,7 @@ export default function FeaturesGrid() {
 
     return (
         <div
-            className="max-w-7xl mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-6 md:gap-8"
+            className="max-w-7xl mt-8 mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-6 md:gap-8"
             style={{ gap: 'max(24px, calc(1.0 * 30px))' }}
         >
             {features.map((feature, index) => (

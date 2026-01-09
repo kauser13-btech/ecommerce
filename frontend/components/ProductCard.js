@@ -16,7 +16,7 @@ export function ProductCardSkeleton() {
   return (
     <div className="group block border border-gray-200 rounded-2xl overflow-hidden">
       {/* Image placeholder with matching aspect ratio and rounded corners */}
-      <div className="relative aspect-[1] overflow-hidden rounded-t-2xl bg-gray-200 animate-pulse mb-2" />
+      <div className="relative aspect-[1] overflow-hidden rounded-t-2xl bg-gray-200 animate-pulse" />
       {/* Content area placeholder with matching padding and background */}
       <div className="space-y-2 p-4 bg-gray-50">
         <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4" /> {/* Placeholder for product title */}

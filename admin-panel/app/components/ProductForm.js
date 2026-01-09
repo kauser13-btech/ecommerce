@@ -9,178 +9,13 @@ import { ChromePicker } from 'react-color';
 import ErrorModal from './ErrorModal';
 import DuplicateSlugModal from './DuplicateSlugModal';
 import ImageUpload from './ImageUpload';
-import { Loader2, Save, ArrowLeft, Trash2, Plus, X, Image as ImageIcon, Upload, Monitor, Check } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Plus, X, Image as ImageIcon, ChevronDown } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
-// Color Image Modal Component
-function ColorImageModal({ onClose, onSelect }) {
-    const [activeTab, setActiveTab] = useState('computer');
-    const [mediaFiles, setMediaFiles] = useState([]);
-    const [mediaLoading, setMediaLoading] = useState(false);
-    const [selectedMedia, setSelectedMedia] = useState(null);
-    const fileInputRef = useRef(null);
 
-    const fetchMedia = async () => {
-        if (mediaFiles.length > 0) return;
-        setMediaLoading(true);
-        try {
-            const res = await api.get('/media');
-            const files = Array.isArray(res.data) ? res.data : (res.data.data || []);
-            setMediaFiles(files);
-        } catch (error) {
-            console.error('Failed to fetch media', error);
-            toast.error('Failed to load media library');
-        } finally {
-            setMediaLoading(false);
-        }
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            onSelect(url, file);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-                <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
-                    <h3 className="text-lg font-semibold text-gray-900">Select Color Image</h3>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex border-b border-gray-100 flex-shrink-0">
-                    <button
-                        type="button"
-                        className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === 'computer'
-                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                            }`}
-                        onClick={() => setActiveTab('computer')}
-                    >
-                        <Monitor size={16} />
-                        From Computer
-                    </button>
-                    <button
-                        type="button"
-                        className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === 'library'
-                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                            }`}
-                        onClick={() => {
-                            setActiveTab('library');
-                            fetchMedia();
-                        }}
-                    >
-                        <ImageIcon size={16} />
-                        Media Library
-                    </button>
-                </div>
-
-                <div className="p-6 flex-1 overflow-y-auto">
-                    {activeTab === 'computer' && (
-                        <div className="relative border-2 border-dashed rounded-xl p-8 text-center transition-all h-full flex flex-col items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                            />
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="p-3 rounded-full bg-gray-100 text-gray-500">
-                                    <Upload size={24} />
-                                </div>
-                                <div>
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="text-blue-600 font-medium hover:text-blue-700"
-                                    >
-                                        Click to upload
-                                    </button>
-                                    <span className="text-gray-500"> or drag and drop</span>
-                                </div>
-                                <p className="text-xs text-gray-400">
-                                    PNG, JPG or GIF (Max 2MB)
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'library' && (
-                        <div className="space-y-4">
-                            {mediaLoading ? (
-                                <div className="flex justify-center py-12">
-                                    <Loader2 size={32} className="animate-spin text-blue-600" />
-                                </div>
-                            ) : mediaFiles.length === 0 ? (
-                                <div className="text-center py-12 text-gray-500">
-                                    <ImageIcon size={48} className="mx-auto mb-2 opacity-20" />
-                                    <p>No images found in library</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                    {mediaFiles.map((media, idx) => {
-                                        const isSelected = selectedMedia === media.url;
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => setSelectedMedia(media.url)}
-                                                className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 group ${isSelected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                            >
-                                                <img src={media.url} alt={media.name} className="w-full h-full object-cover" />
-                                                {isSelected && (
-                                                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                                                        <div className="bg-blue-600 text-white rounded-full p-1 shadow-sm">
-                                                            <Check size={12} />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {media.name}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            <div className="flex justify-end pt-4 border-t border-gray-100 mt-4 sticky bottom-0 bg-white">
-                                <button
-                                    type="button"
-                                    disabled={!selectedMedia}
-                                    onClick={() => {
-                                        if (selectedMedia) {
-                                            onSelect(selectedMedia, null);
-                                        }
-                                    }}
-                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    <Check size={16} />
-                                    Use Selected
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 
 export default function ProductForm({ initialData, isEdit }) {
@@ -207,7 +42,7 @@ export default function ProductForm({ initialData, isEdit }) {
         description: '',
         price: '',
         original_price: '',
-        stock: '',
+        stock: '0',
         category_id: '',
         brand_id: '',
         image: '',
@@ -308,7 +143,8 @@ export default function ProductForm({ initialData, isEdit }) {
         if (!data.category_id) errors.category_id = 'Please select a category';
         if (!data.brand_id) errors.brand_id = 'Please select a brand';
         if (!data.stock) errors.stock = 'Please define the stock quantity';
-        if (!data.sku) errors.sku = 'Please provide a unique SKU';
+        // SKU is auto-generated now, no validation needed unless we want to check uniqueness which backend does
+        // if (!data.sku) errors.sku = 'Please provide a unique SKU';
 
         // Remove HTML tags to check if description is empty
         const cleanDescription = data.description?.replace(/<[^>]+>/g, '').trim();
@@ -323,7 +159,16 @@ export default function ProductForm({ initialData, isEdit }) {
 
     const saveProduct = async (shouldRedirect = true, overrideData = null) => {
         // Use override data for validation if provided, merging with current state
-        const dataToSubmit = overrideData ? { ...formData, ...overrideData } : formData;
+        let dataToSubmit = overrideData ? { ...formData, ...overrideData } : formData;
+
+        // Auto-generate SKU if missing
+        if (!dataToSubmit.sku) {
+            const baseSku = slugify(dataToSubmit.name).toUpperCase().substring(0, 10);
+            const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+            dataToSubmit.sku = `${baseSku}-${random}`;
+            // Update state too so it reflects in UI if we stay on page
+            setFormData(prev => ({ ...prev, sku: dataToSubmit.sku }));
+        }
 
         const errors = validate(dataToSubmit);
         if (errors) {
@@ -349,6 +194,12 @@ export default function ProductForm({ initialData, isEdit }) {
                 if (key === 'specifications' && typeof value === 'object') {
                     value = JSON.stringify(value);
                 }
+
+                // Fix: Skip original_price if it's empty to avoid "must be an integer" error
+                if (key === 'original_price' && !value) {
+                    return;
+                }
+
                 formDataObj.append(key, value);
             });
 
@@ -453,18 +304,32 @@ export default function ProductForm({ initialData, isEdit }) {
             .replace(/--+/g, '-');    // Replace multiple - with single -
     };
 
+    const handleBlur = (e) => {
+        if (e.target.name === 'slug' && !e.target.value) {
+            setFormData(prev => ({ ...prev, slug: slugify(prev.name) }));
+            setIsSlugDirty(false);
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        let newValue = type === 'checkbox' ? checked : value;
 
         // If user manually edits slug, mark it as dirty
         if (name === 'slug') {
             setIsSlugDirty(true);
+            // Enforce slugify (allow trailing dash while typing)
+            newValue = newValue
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w-]+/g, '')
+                .replace(/--+/g, '-');
         }
 
         setFormData(prev => {
             const newData = {
                 ...prev,
-                [name]: type === 'checkbox' ? checked : value
+                [name]: newValue
             };
 
             // Auto-generate slug from name if:
@@ -594,7 +459,7 @@ export default function ProductForm({ initialData, isEdit }) {
                 attributes,
                 price: formData.price,
                 stock: formData.stock,
-                sku: `${formData.sku}-${skuSuffix}`,
+                sku: `${formData.sku || slugify(formData.name).toUpperCase()}-${skuSuffix}`,
                 original_price: formData.original_price,
                 is_active: true,
                 is_preorder: !!formData.is_preorder,
@@ -681,22 +546,13 @@ export default function ProductForm({ initialData, isEdit }) {
                                 name="slug"
                                 value={formData.slug}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                 required
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                            <input
-                                type="text"
-                                name="sku"
-                                value={formData.sku}
-                                onChange={handleChange}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                required
-                            />
-                        </div>
+                        {/* SKU Field Hidden - Auto Generated */}
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -1104,14 +960,15 @@ export default function ProductForm({ initialData, isEdit }) {
                                     </div>
 
                                     {/* Image Upload */}
-                                    <div className="col-span-2">
+                                    {/* Link from Gallery UI */}
+                                    <div className="col-span-2 relative">
                                         {color.image ? (
                                             <div className="flex items-center gap-3 bg-white p-1.5 rounded-lg border border-gray-200">
                                                 <div className="h-8 w-8 rounded overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
                                                     <img src={color.image} alt={color.name} className="h-full w-full object-cover" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-xs text-gray-500 truncate">Image set</p>
+                                                    <p className="text-xs text-gray-500 truncate">Linked from gallery</p>
                                                 </div>
                                                 <button
                                                     type="button"
@@ -1126,30 +983,63 @@ export default function ProductForm({ initialData, isEdit }) {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => setOpenColorPicker(`image-${index}`)}
-                                                className="flex items-center justify-center w-full h-10 px-3 transition bg-white border border-gray-300 border-dashed rounded-lg hover:border-gray-400 hover:bg-gray-50"
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <ImageIcon className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-xs text-gray-500">Add Image</span>
-                                                </div>
-                                            </button>
-                                        )}
+                                            <div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenColorPicker(openColorPicker === `image-${index}` ? null : `image-${index}`)}
+                                                    className="flex items-center justify-between w-full h-10 px-3 transition bg-white border border-gray-300 rounded-lg hover:border-blue-400 hover:ring-2 hover:ring-blue-50"
+                                                >
+                                                    <div className="flex items-center space-x-2">
+                                                        <ImageIcon className="w-4 h-4 text-gray-400" />
+                                                        <span className="text-xs text-gray-600">Select from Gallery</span>
+                                                    </div>
+                                                    <ChevronDown size={14} className="text-gray-400" />
+                                                </button>
 
-                                        {/* Image Selection Modal */}
-                                        {openColorPicker === `image-${index}` && (
-                                            <ColorImageModal
-                                                onClose={() => setOpenColorPicker(null)}
-                                                onSelect={(imageUrl, imageFile) => {
-                                                    handleProductColorChange(index, 'image', imageUrl);
-                                                    if (imageFile) {
-                                                        handleProductColorChange(index, 'image_file', imageFile);
-                                                    }
-                                                    setOpenColorPicker(null);
-                                                }}
-                                            />
+                                                {/* Dropdown for Gallery Images */}
+                                                {openColorPicker === `image-${index}` && (
+                                                    <div className="absolute top-12 left-0 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-100 p-3 animate-in fade-in zoom-in duration-200 w-[280px]">
+                                                        {images.length === 0 ? (
+                                                            <p className="text-xs text-center text-gray-500 py-4">
+                                                                No product images uploaded.<br />
+                                                                Upload images in "Product Images" first.
+                                                            </p>
+                                                        ) : (
+                                                            <div className="grid grid-cols-4 gap-2">
+                                                                {images.map((img, imgIdx) => (
+                                                                    <div
+                                                                        key={imgIdx}
+                                                                        onClick={() => {
+                                                                            handleProductColorChange(index, 'image', img.url);
+                                                                            // Ideally we check if it is a 'new' file type and set image_file too if needed, 
+                                                                            // but 'image' url is enough for display and linking.
+                                                                            // If we want backend to know which FILE it matches, we might need logic.
+                                                                            // But usually backend matches by filename or we just send URL if it's existing. 
+                                                                            // Since we are "Linking", existing URL is fine. 
+                                                                            // For new files, the 'url' is blob, which backend won't know unless we upload it.
+                                                                            // But the main 'images' array will handle uploading.
+                                                                            // So we just need to ensure backend saves the 'image' string field of color.
+                                                                            setOpenColorPicker(null);
+                                                                        }}
+                                                                        className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:border-blue-500 hover:ring-2 hover:ring-blue-100 transition-all"
+                                                                        title="Use this image"
+                                                                    >
+                                                                        <img src={img.url} className="w-full h-full object-cover" />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
+                                                            <button
+                                                                onClick={() => setOpenColorPicker(null)}
+                                                                className="text-xs text-gray-400 hover:text-gray-600"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
 
@@ -1203,13 +1093,17 @@ export default function ProductForm({ initialData, isEdit }) {
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
-                                <input
-                                    type="text"
-                                    placeholder="Name (e.g. Ram, Storage etc.)"
+                                <select
                                     value={option.name}
                                     onChange={(e) => handleOptionChange(index, 'name', e.target.value)}
                                     className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                >
+                                    <option value="">Select Type</option>
+                                    <option value="Storage">Storage</option>
+                                    <option value="Region">Region</option>
+                                    <option value="Sim">Sim</option>
+                                    <option value="Size">Size</option>
+                                </select>
                                 <input
                                     type="text"
                                     placeholder="Values (comma separated)"
@@ -1250,7 +1144,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                     <th className="px-4 py-3">Original Price</th>
                                     <th className="px-4 py-3">Image</th>
                                     <th className="px-4 py-3">Stock</th>
-                                    <th className="px-4 py-3">SKU</th>
+                                    {/* <th className="px-4 py-3">SKU</th> */}
                                     <th className="px-4 py-3">Pre-order</th>
                                     <th className="px-4 py-3">Actions</th>
                                 </tr>
@@ -1321,14 +1215,14 @@ export default function ProductForm({ initialData, isEdit }) {
                                                 className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                                             />
                                         </td>
-                                        <td className="px-4 py-3">
+                                        {/* <td className="px-4 py-3">
                                             <input
                                                 type="text"
                                                 value={variant.sku}
                                                 onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
                                                 className="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                                             />
-                                        </td>
+                                        </td> */}
                                         <td className="px-4 py-3 text-center">
                                             <input
                                                 type="checkbox"

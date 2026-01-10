@@ -1148,9 +1148,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                     <th className="px-4 py-3">Variant</th>
                                     <th className="px-4 py-3">Price</th>
                                     <th className="px-4 py-3">Original Price</th>
-                                    <th className="px-4 py-3">Image</th>
                                     <th className="px-4 py-3">Stock</th>
-                                    {/* <th className="px-4 py-3">SKU</th> */}
                                     <th className="px-4 py-3">Pre-order</th>
                                     <th className="px-4 py-3">Actions</th>
                                 </tr>
@@ -1159,7 +1157,7 @@ export default function ProductForm({ initialData, isEdit }) {
                                 {variants.map((variant, index) => (
                                     <tr key={index} className="border-b hover:bg-gray-50">
                                         <td className="px-4 py-3 font-medium text-gray-900">
-                                            {Object.entries(variant.attributes).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                            {Object.entries(variant.attributes).map(([k, v]) => `${v}`).join('-')}
                                         </td>
                                         <td className="px-4 py-3">
                                             <input
@@ -1186,34 +1184,6 @@ export default function ProductForm({ initialData, isEdit }) {
                                             />
                                         </td>
                                         <td className="px-4 py-3">
-                                            {variant.image || (variant.variation_color_name && productColors.find(c => c.name === variant.variation_color_name)?.image) ? (
-                                                <div className="flex items-center gap-2">
-                                                    <img src={variant.image || productColors.find(c => c.name === variant.variation_color_name)?.image} alt="Variant" className="w-8 h-8 object-cover rounded" />
-                                                    {/* We only show remove if it's an override image. If it's linked color image, can we remove/detach? 
-                                                        User requirement: 'Must reference'. So if color linked, maybe show lock icon? 
-                                                        For simplicity, if linked to color, we show it. If user uploads specific override, we show that.
-                                                    */}
-                                                    {variant.image && (
-                                                        <button type="button" onClick={() => handleVariantChange(index, 'image', null)} className="text-red-500 text-xs">Reset</button>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files[0];
-                                                        if (file) {
-                                                            handleVariantChange(index, 'image_file', file);
-                                                            // Preview
-                                                            handleVariantChange(index, 'image', URL.createObjectURL(file));
-                                                        }
-                                                    }}
-                                                    className="text-xs"
-                                                />
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
                                             <input
                                                 type="number"
                                                 value={variant.stock}
@@ -1221,14 +1191,6 @@ export default function ProductForm({ initialData, isEdit }) {
                                                 className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                                             />
                                         </td>
-                                        {/* <td className="px-4 py-3">
-                                            <input
-                                                type="text"
-                                                value={variant.sku}
-                                                onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                                                className="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </td> */}
                                         <td className="px-4 py-3 text-center">
                                             <input
                                                 type="checkbox"

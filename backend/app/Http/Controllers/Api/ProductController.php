@@ -192,14 +192,46 @@ class ProductController extends Controller
         return response()->json(['data' => $products]);
     }
 
+    // Helper to generate unique SKU
+    private function generateUniqueSku()
+    {
+        // Find the highest existing SKU starting with APP-
+        // Check both Products and Variants
+        $maxProductSku = \App\Models\Product::where('sku', 'like', 'APP-%')->max('sku');
+        $maxVariantSku = \App\Models\ProductVariant::where('sku', 'like', 'APP-%')->max('sku');
+
+        $maxSku = $maxProductSku > $maxVariantSku ? $maxProductSku : $maxVariantSku;
+
+        if ($maxSku) {
+            // Extract number
+            $number = intval(substr($maxSku, 4));
+            $nextNumber = $number + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        // Ensure uniqueness in race condition (simple loop check)
+        do {
+            $sku = 'APP-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            $exists = \App\Models\Product::where('sku', $sku)->exists() 
+                   || \App\Models\ProductVariant::where('sku', $sku)->exists();
+            if ($exists) {
+                $nextNumber++;
+            }
+        } while ($exists);
+
+        return $sku;
+    }
+
     public function store(Request $request)
     {
         return DB::transaction(function () use ($request) {
             try {
+                // Remove 'sku' from required validation as it's auto-generated
                 $validated = $request->validate([
                     'name' => 'required|string|max:255',
                     'slug' => 'required|string|unique:products,slug',
-                    'sku' => 'required|string|unique:products,sku',
+                    // 'sku' => 'required|string|unique:products,sku', // Auto-generated now
                     'price' => 'required|integer',
                     'original_price' => 'nullable|integer',
                     'stock' => 'required|integer',
@@ -226,6 +258,9 @@ class ProductController extends Controller
 
             $data = $validated;
             
+            // Auto-generate SKU for Product
+            $data['sku'] = $this->generateUniqueSku();
+
             if (isset($data['options']) && is_string($data['options'])) {
                 $data['options'] = json_decode($data['options'], true);
             }
@@ -273,31 +308,22 @@ class ProductController extends Controller
 
             $product = Product::create($data);
 
-            // Handle Variants with STRICT Validation
+            // Handle Variants with Automatic SKU
             if ($request->has('variants')) {
                 $variants = json_decode($request->variants, true); 
                 if (is_array($variants)) {
                    
-                   // 1. Check for Duplicate SKUs within the request
-                   $skus = array_filter(array_column($variants, 'sku'));
-                   if (count($skus) !== count(array_unique($skus))) {
-                        throw ValidationException::withMessages(['variants' => 'Duplicate SKUs found in variants list.']);
-                   }
-
                    foreach ($variants as $index => $variantData) {
-                        // 2. Check for Existing SKU in DB (excluding this product logic since it's create, but globally unique check)
-                        if (!empty($variantData['sku'])) {
-                            // Ideally, we'd do a batch check or unique rule, but loop check is ok for now validation.
-                            // Better: use validation rule above? Variants is json string so hard to validate via standard rules.
-                             if (\App\Models\ProductVariant::where('sku', $variantData['sku'])->exists() || \App\Models\Product::where('sku', $variantData['sku'])->exists()) {
-                                  throw ValidationException::withMessages(["variants.$index.sku" => "SKU '{$variantData['sku']}' is already taken."]);
-                             }
-                        }
+                        // Generate Variant SKU
+                        $variantData['sku'] = $this->generateUniqueSku();
 
                         if ($request->hasFile("variant_images.$index")) {
                             $path = $request->file("variant_images.$index")->store('products', 'public');
                             $variantData['image'] = asset('storage/' . $path);
                         }
+                        // Ensure product_id is set (laravel relationship does it, but good to be safe if manual)
+                        // $variantData['product_id'] = $product->id; 
+                        
                         $product->variants()->create($variantData);
                    }
                 }
@@ -319,7 +345,6 @@ class ProductController extends Controller
                 $validated = $request->validate([
                     'name' => 'string|max:255',
                     'slug' => 'string|unique:products,slug,' . $id,
-                    'sku' => 'string|unique:products,sku,' . $id,
                     'price' => 'integer',
                     'original_price' => 'nullable|integer',
                     'stock' => 'integer',
@@ -346,6 +371,11 @@ class ProductController extends Controller
             }
 
             $data = $validated;
+            
+            // SKU is not updatable via this API to keep it stable, or use existing logic if sent? 
+            // Request says "Replace current... with fixed 6-digit". 
+            // If user wants to re-generate SKU for existing product, that's a separate migration task.
+            // For UPDATE, we keep existing SKU.
 
             if (isset($data['options']) && is_string($data['options'])) {
                 $data['options'] = json_decode($data['options'], true);
@@ -398,32 +428,14 @@ class ProductController extends Controller
 
             $product->update($data);
 
-            // Variants with Validation
+            // Variants with Automatic SKU for NEW variants
             if ($request->has('variants')) {
                  $variantsInput = json_decode($request->variants, true);
                  if (is_array($variantsInput)) {
                      
-                     // 1. Check for Duplicate SKUs within request
-                     $skus = array_filter(array_column($variantsInput, 'sku'));
-                     if (count($skus) !== count(array_unique($skus))) {
-                          throw ValidationException::withMessages(['variants' => 'Duplicate SKUs found in variants list.']);
-                     }
-
                      $existingIds = [];
                      foreach ($variantsInput as $index => $variantData) {
                          
-                         // 2. Check DB Uniqueness (Exclude current variant ID if updating)
-                         if (!empty($variantData['sku'])) {
-                             $exists = \App\Models\ProductVariant::where('sku', $variantData['sku']);
-                             if (isset($variantData['id'])) {
-                                 $exists->where('id', '!=', $variantData['id']);
-                             }
-                             if ($exists->exists()) {
-                                  throw ValidationException::withMessages(["variants.$index.sku" => "SKU '{$variantData['sku']}' is already taken."]);
-                             }
-                             // Global check? optional details
-                         }
-
                          $variant = null;
                          if ($request->hasFile("variant_images.$index")) {
                             $path = $request->file("variant_images.$index")->store('products', 'public');
@@ -435,14 +447,23 @@ class ProductController extends Controller
                          if (isset($variantData['id'])) {
                              $variant = $product->variants()->find($variantData['id']);
                          }
-                         if (!$variant && isset($variantData['sku'])) {
-                             $variant = $product->variants()->where('sku', $variantData['sku'])->first();
+                         if (!isset($variantData['id']) && !$variant) {
+                             // Trying to find by SKU? No, SKU is auto-generated now.
+                             // Logic: If it has ID, it's existing. If not, it's new.
+                             // What if frontend sends SKU? We ignore/overwrite it if it's new?
+                             // Request says "Ensure system generates...".
+                             // So for NEW variants, we MUST generate.
                          }
 
                          if ($variant) {
+                             // Update existing
+                             // Don't update SKU of existing variant to maintain integrity
+                             unset($variantData['sku']); 
                              $variant->update($variantData);
                              $existingIds[] = $variant->id;
                          } else {
+                             // Create new
+                             $variantData['sku'] = $this->generateUniqueSku();
                              $newVariant = $product->variants()->create($variantData);
                              $existingIds[] = $newVariant->id;
                          }

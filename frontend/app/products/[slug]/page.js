@@ -82,10 +82,8 @@ export default function ProductDetail({ params }) {
     }
 
     fetchProduct();
-    fetchProduct();
   }, [slug]);
 
-  // ... existing code ...
   const [selectedVariant, setSelectedVariant] = useState(null);
 
   useEffect(() => {
@@ -111,7 +109,7 @@ export default function ProductDetail({ params }) {
     }
   }, [product]);
 
-  // Find matching variant
+  // Find matching variant based on selectedOptions
   useEffect(() => {
     if (!product?.variants || !selectedOptions) {
       setSelectedVariant(null);
@@ -121,7 +119,6 @@ export default function ProductDetail({ params }) {
     const variant = product.variants.find(v => {
       try {
         const vAttrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
-        // Check if every selected option matches this variant's attributes
         return Object.entries(selectedOptions).every(([key, value]) => vAttrs[key] === value);
       } catch (e) {
         return false;
@@ -134,14 +131,22 @@ export default function ProductDetail({ params }) {
   // Determine image source for variants
   const getVariantImage = (variant) => {
     if (!variant) return null;
-    // 1. If variant has specific override image, use it
     if (variant.image) return variant.image;
 
-    // 2. If variant has color name, look it up in product_colors
-    if (variant.variation_color_name && product.product_colors) {
+    let colorName = variant.variation_color_name;
+
+    if (!colorName && variant.attributes) {
+      try {
+        const attrs = typeof variant.attributes === 'string' ? JSON.parse(variant.attributes) : variant.attributes;
+        const key = Object.keys(attrs).find(k => k.toLowerCase() === 'color' || k.toLowerCase() === 'colors');
+        if (key) colorName = attrs[key];
+      } catch (e) { console.error("Error parsing variant attributes", e); }
+    }
+
+    if (colorName && product.product_colors) {
       try {
         const colors = typeof product.product_colors === 'string' ? JSON.parse(product.product_colors) : product.product_colors;
-        const matchedColor = Array.isArray(colors) ? colors.find(c => c.name === variant.variation_color_name) : null;
+        const matchedColor = Array.isArray(colors) ? colors.find(c => c.name === colorName) : null;
         if (matchedColor && matchedColor.image) return matchedColor.image;
       } catch (e) { console.error("Error parsing product_colors for image", e); }
     }
@@ -153,14 +158,12 @@ export default function ProductDetail({ params }) {
     if (!product) return [];
     let imgs = [product.image];
     try {
-      // Main images
       if (product.images) {
         imgs = typeof product.images === 'string'
           ? JSON.parse(product.images)
           : (Array.isArray(product.images) ? product.images : [product.image]);
       }
 
-      // Add Product Colors images if they exist
       if (product.product_colors) {
         const colors = typeof product.product_colors === 'string' ? JSON.parse(product.product_colors) : product.product_colors;
         if (Array.isArray(colors)) {
@@ -171,16 +174,12 @@ export default function ProductDetail({ params }) {
     } catch (error) {
       imgs = [product.image];
     }
-    // De-dupe
     return [...new Set(imgs.filter(Boolean))];
   }, [product]);
 
   const images = useMemo(() => {
     const variantImages = product?.variants?.map(v => getVariantImage(v)).filter(Boolean) || [];
     const uniqueVariantImages = variantImages.filter(img => !rawImages.includes(img));
-
-    // Combine rawImages + uniqueVariantImages
-    // We also want to ensure uniqueness within variantImages themselves if multiple variants use same image
     const seen = new Set(rawImages);
     const finalImages = [...rawImages];
 
@@ -199,9 +198,9 @@ export default function ProductDetail({ params }) {
     setSelectedImage(0);
   }, [slug]);
 
-  // Unidirectional Sync: Variant -> Image
-  // When a variant is selected, update the gallery image if the variant has a specific image assigned.
-  // We explicitly DO NOT sync the other way (Image -> Variant) to allow users to browse images without changing selection.
+  // SYNC 1: Variant -> Image
+  // When a variant is selected (via options), switch the image.
+  // FIX: If the variant has no specific image, fall back to the main product image (Index 0)
   useEffect(() => {
     if (!selectedVariant) return;
 
@@ -210,7 +209,13 @@ export default function ProductDetail({ params }) {
       const idx = images.indexOf(vImg);
       if (idx !== -1) {
         setSelectedImage(idx);
+      } else {
+        // Image defined in variant but not in images array? Fallback to Main Image
+        setSelectedImage(0);
       }
+    } else {
+      // Variant has NO image defined. Fallback to Main Product Image
+      setSelectedImage(0);
     }
   }, [selectedVariant, images]);
 
@@ -238,8 +243,6 @@ export default function ProductDetail({ params }) {
       </>
     );
   }
-
-
 
   const handleAddToCart = () => {
     addToCart({
@@ -270,14 +273,9 @@ export default function ProductDetail({ params }) {
     toggleCart();
   };
 
-
-
-
-
   // Determine current price and original price based on selection
   const currentPrice = selectedVariant ? Number(selectedVariant.price) : Number(product.price);
   const currentOriginalPrice = selectedVariant ? (selectedVariant.original_price ? Number(selectedVariant.original_price) : 0) : (product.original_price ? Number(product.original_price) : 0);
-  // Helper to check pre-order status safely
   const checkPreOrder = (item) => {
     if (!item) return false;
     return item.is_preorder === true || item.is_preorder === 1 || item.is_preorder === '1' || item.is_preorder === 'true';
@@ -338,13 +336,14 @@ export default function ProductDetail({ params }) {
                   ) : (
                     <div className="text-gray-400">No Image</div>
                   )}
-                  {/* Zoom Hint Overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-end justify-end p-4 opacity-0 group-hover:opacity-100">
                     <span className="bg-white/90 backdrop-blur text-gray-800 p-2.5 rounded-full shadow-sm hover:scale-110 transition-transform">
                       <Maximize2 size={20} />
                     </span>
                   </div>
                 </div>
+
+                {/* MAIN IMAGE SLIDER (PASSIVE) */}
                 {images.length > 1 && (
                   <div className="flex gap-4 overflow-x-auto pb-2">
                     {images.map((img, idx) => (
@@ -399,9 +398,9 @@ export default function ProductDetail({ params }) {
                 </div>
 
                 {/* Selectors */}
-                {/* Dynamic Options */}
                 <div className="space-y-4">
-                  {/* explicit Available Colors from Metadata if not in Options */}
+
+                  {/* --- EXPLICIT COLORS (METADATA) --- */}
                   {(() => {
                     const productColors = (() => {
                       try {
@@ -411,25 +410,41 @@ export default function ProductDetail({ params }) {
                       } catch (e) { return []; }
                     })();
 
+                    // Only show this block if Color is NOT in the standard options list
                     const hasColorOption = parsedOptions.some(o => o.name.toLowerCase() === 'color');
 
                     if (!hasColorOption && Array.isArray(productColors) && productColors.length > 0) {
-                      const activeColor = productColors.find(c => images[selectedImage] === c.image);
+                      const colorOptionKey = parsedOptions.find(o => o.name.toLowerCase() === 'color')?.name || 'Color';
+                      const activeColorName = selectedOptions[colorOptionKey];
+
                       return (
                         <div>
                           <h3 className="font-bold text-gray-900 mb-3">
-                            Available Colors:
+                            Color: <span className="font-normal text-gray-600">{activeColorName || 'Select a color'}</span>
                           </h3>
                           <div className="flex flex-wrap gap-3">
                             {productColors.map((color, idx) => {
-                              const isSelected = images[selectedImage] === color.image;
+                              const isSelected = selectedOptions[colorOptionKey] === color.name;
+
                               return (
                                 <button
                                   key={idx}
                                   onClick={() => {
-                                    if (color.image) {
-                                      const imgIdx = images.indexOf(color.image);
-                                      if (imgIdx !== -1) setSelectedImage(imgIdx);
+                                    // Update Options
+                                    setSelectedOptions(prev => ({
+                                      ...prev,
+                                      [colorOptionKey]: color.name
+                                    }));
+
+                                    // Update Image Logic for Explicit Colors
+                                    // FIX: Check if color has a valid image in the list. If not, fallback to 0.
+                                    const hasValidImage = color.image && images.includes(color.image);
+
+                                    if (hasValidImage) {
+                                      setSelectedImage(images.indexOf(color.image));
+                                    } else {
+                                      // Fallback to main product image if this color has no image
+                                      setSelectedImage(0);
                                     }
                                   }}
                                   className={`px-4 py-2 rounded-xl border transition-all flex items-center gap-2 ${isSelected
@@ -438,7 +453,6 @@ export default function ProductDetail({ params }) {
                                     }`}
                                   title={color.name}
                                 >
-                                  {/* Color Dot */}
                                   <div
                                     className="w-4 h-4 rounded-full border border-gray-200 shadow-sm"
                                     style={{ backgroundColor: color.code || '#eee' }}
@@ -453,9 +467,9 @@ export default function ProductDetail({ params }) {
                     }
                   })()}
 
+                  {/* --- DYNAMIC OPTIONS (STANDARD) --- */}
                   {parsedOptions.map((option, idx) => {
-                    // Check if this option is 'Color' and if we can resolve hex codes from product_colors
-                    const isColorOption = option.name.toLowerCase() === 'color'; // Simple check, or check vs product_colors keys
+                    const isColorOption = option.name.toLowerCase() === 'color';
                     const productColors = (() => {
                       try {
                         return typeof product.product_colors === 'string'
@@ -572,7 +586,6 @@ export default function ProductDetail({ params }) {
 
                   if (tabs.length === 0) return null;
 
-                  // Ensure active tab is valid
                   const currentTab = tabs.find(t => t.id === activeTab) ? activeTab : tabs[0].id;
 
                   return (
@@ -601,7 +614,6 @@ export default function ProductDetail({ params }) {
                             try {
                               const specs = typeof tab.content === 'string' ? JSON.parse(tab.content) : tab.content;
 
-                              // Handle Key-Value Object
                               if (typeof specs === 'object' && specs !== null && !Array.isArray(specs)) {
                                 return (
                                   <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -618,7 +630,6 @@ export default function ProductDetail({ params }) {
                                   </div>
                                 );
                               }
-                              // Handle Array of Objects (if applicable, e.g. [{name: 'Weight', value: '1kg'}])
                               if (Array.isArray(specs)) {
                                 return (
                                   <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -708,7 +719,6 @@ export default function ProductDetail({ params }) {
                       ))}
                     </Swiper>
 
-                    {/* Custom Navigation */}
                     <div className="flex items-center justify-center gap-4 mt-4">
                       <button className="custom-swiper-button-prev w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:border-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         <ArrowLeft size={20} />

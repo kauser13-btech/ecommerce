@@ -157,6 +157,15 @@ export default function ProductForm({ initialData, isEdit }) {
         return Object.keys(errors).length > 0 ? errors : null;
     };
 
+    const uploadFile = async (file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        const response = await api.post('/media', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data.url;
+    };
+
     const saveProduct = async (shouldRedirect = true, overrideData = null) => {
         // Use override data for validation if provided, merging with current state
         let dataToSubmit = overrideData ? { ...formData, ...overrideData } : formData;
@@ -177,85 +186,137 @@ export default function ProductForm({ initialData, isEdit }) {
         }
 
         setLoading(true);
+        const toastId = toast.loading('Processing product...');
 
         try {
-            const formDataObj = new FormData();
+            // 1. Upload Images First
+            const uploadedImages = [];
 
-            // Append regular fields
-            Object.keys(dataToSubmit).forEach(key => {
-                if (key === 'image' || key === 'images') return;
-                let value = dataToSubmit[key];
-
-                // Convert booleans to 1/0 for backend validation
-                if (typeof value === 'boolean') {
-                    value = value ? '1' : '0';
-                }
-
-                if (key === 'specifications' && typeof value === 'object') {
-                    value = JSON.stringify(value);
-                }
-
-                // Fix: Skip original_price if it's empty to avoid "must be an integer" error
-                if (key === 'original_price' && !value) {
-                    return;
-                }
-
-                formDataObj.append(key, value);
-            });
-
-            // Append Options
-            formDataObj.append('options', JSON.stringify(options));
-
-            // Append Variants
-            formDataObj.append('variants', JSON.stringify(variants));
-
-            // Separate images
-            const existingImages = images.filter(img => img.type === 'existing').map(img => img.url);
-            const newImageFiles = images.filter(img => img.type === 'new').map(img => img.file);
-
-            // Append Existing Images
-            existingImages.forEach(url => {
-                formDataObj.append('existing_images[]', url);
-            });
-
-            // Append New Images
-            newImageFiles.forEach((file) => {
-                formDataObj.append('images[]', file);
-            });
-
-            // Append Variant Images
-            variants.forEach((variant, index) => {
-                if (variant.image_file) {
-                    formDataObj.append(`variant_images[${index}]`, variant.image_file);
-                }
-            });
-
-            // Append Product Colors
-            if (productColors.length > 0) {
-                formDataObj.append('product_colors', JSON.stringify(productColors.map(c => ({
-                    name: c.name,
-                    image: c.image, // Keep existing URL string if no new file
-                    code: c.code // Hex code
-                }))));
-
-                productColors.forEach((color, index) => {
-                    if (color.image_file) {
-                        formDataObj.append(`color_images[${index}]`, color.image_file);
+            // Main Images
+            toast.loading('Uploading main images...', { id: toastId });
+            for (const img of images) {
+                if (img.type === 'new' && img.file) {
+                    try {
+                        const url = await uploadFile(img.file);
+                        uploadedImages.push(url);
+                    } catch (uploadError) {
+                        console.error("Failed to upload image", img, uploadError);
+                        toast.error(`Failed to upload ${img.file.name}`, { id: toastId });
+                        setLoading(false);
+                        return;
                     }
-                });
+                } else {
+                    uploadedImages.push(img.url);
+                }
             }
 
-            const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+            // Product Colors Images
+            const processedColors = [...productColors];
+            if (processedColors.length > 0) {
+                toast.loading('Uploading color images...', { id: toastId });
+                for (let i = 0; i < processedColors.length; i++) {
+                    if (processedColors[i].image_file) {
+                        try {
+                            const url = await uploadFile(processedColors[i].image_file);
+                            processedColors[i].image = url;
+                            processedColors[i].image_file = null; // Clear file after upload
+                        } catch (error) {
+                            console.error("Failed to upload color image", error);
+                            toast.error("Failed to upload a color image", { id: toastId });
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Variant Images
+            const processedVariants = [...variants];
+            // Only upload if variant has a SPECIFIC image file that differs (if applicable logic exists)
+            // Currently variants usually inherit or link, but if they have image_file:
+            if (processedVariants.length > 0) {
+                toast.loading('Uploading variant images...', { id: toastId });
+                for (let i = 0; i < processedVariants.length; i++) {
+                    if (processedVariants[i].image_file) {
+                        try {
+                            const url = await uploadFile(processedVariants[i].image_file);
+                            // Check where to store it. 'image' field in variant?
+                            // Frontend state might differ, let's assume 'image' property.
+                            processedVariants[i].image = url;
+                            processedVariants[i].image_file = null;
+                        } catch (error) {
+                            console.error("Failed to upload variant image", error);
+                            toast.error("Failed to upload a variant image", { id: toastId });
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 2. Prepare JSON Payload
+            toast.loading('Saving product data...', { id: toastId });
+
+            const payload = {
+                ...dataToSubmit,
+                images: uploadedImages,
+                image: uploadedImages.length > 0 ? uploadedImages[0] : null, // Main thumbnail
+                product_colors: JSON.stringify(processedColors.map(c => ({
+                    name: c.name,
+                    image: c.image,
+                    code: c.code
+                }))),
+                variants: JSON.stringify(processedVariants),
+                options: JSON.stringify(options),
+
+                // Ensure Boolean conversion if backend needs it (though JSON true/false is usually fine for Laravel with casts, 
+                // but checking original logic which used '1'/'0')
+                is_active: dataToSubmit.is_active ? true : false,
+                is_featured: dataToSubmit.is_featured ? true : false,
+                is_new: dataToSubmit.is_new ? true : false,
+                is_preorder: dataToSubmit.is_preorder ? true : false,
+            };
+
+            // Clean up empty original_price
+            if (!payload.original_price) {
+                delete payload.original_price;
+            }
+            if (typeof payload.specifications === 'object') {
+                payload.specifications = JSON.stringify(payload.specifications);
+            }
+
+            // Remove internal fields that shouldn't be sent
+            delete payload.product_colors_files; // if any
+
+            // For editing, we might need to send `existing_images` separately?
+            // Actually, if we send `images` as an array of ALL URLs (existing + new), 
+            // the ProductController logic for 'images' (which iterates files) needs to be checked.
+            // Wait, ProductController's `store` method expects `images` to be FILES.
+            // AND `existing_images` to be URLs.
+            // We need to UPDATE ProductController to accept `images` as an array of Strings mixed? 
+            // OR we just use `existing_images` for EVERYTHING since they are all URLs now?
+
+            // Let's modify the payload to put ALL URLs into `existing_images` 
+            // and send `images` as null/empty? 
+            // Checking ProductController logic:
+            // if ($request->has('existing_images')) { ... $finalImages = ... }
+            // if ($request->hasFile('images')) { ... }
+            // So if we send ALL URLs in `existing_images`, it essentially overwrites/sets the list.
+            // The controller merges them safely? 
+            // Controller: $finalImages = $existingInputs; ... append new files ... $data['images'] = $finalImages;
+            // YES. So we should send ALL uploaded URLs as `existing_images`.
+
+            payload.existing_images = uploadedImages;
+            delete payload.images; // Don't send 'images' key or send empty
 
             let response;
             if (isEdit) {
-                formDataObj.append('_method', 'PUT');
-                response = await api.post(`/products/${initialData.id}`, formDataObj, config);
+                response = await api.put(`/products/${initialData.id}`, payload);
             } else {
-                response = await api.post('/products', formDataObj, config);
+                response = await api.post('/products', payload);
             }
 
-            toast.success('Product saved successfully');
+            toast.success('Product saved successfully', { id: toastId });
 
             if (shouldRedirect) {
                 router.push('/dashboard/products');
@@ -277,6 +338,7 @@ export default function ProductForm({ initialData, isEdit }) {
             } else {
                 setErrorModal({ isOpen: true, errors });
             }
+            toast.error('Failed to save product', { id: toastId });
         } finally {
             setLoading(false);
         }

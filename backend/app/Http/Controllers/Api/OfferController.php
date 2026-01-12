@@ -31,10 +31,15 @@ class OfferController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'required|string',
+            'image' => 'nullable', // Allow file or string
             'product_id' => 'nullable|exists:products,id',
             'is_active' => 'boolean',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('offers', 'public');
+            $validated['image'] = asset('storage/' . $path);
+        }
 
         $maxOrder = Offer::max('sort_order') ?? 0;
         $validated['sort_order'] = $maxOrder + 1;
@@ -50,10 +55,17 @@ class OfferController extends Controller
         
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
-            'image' => 'sometimes|string',
+            'image' => 'nullable', // Allow file, string or null
             'product_id' => 'nullable|exists:products,id',
             'is_active' => 'boolean',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('offers', 'public');
+            $validated['image'] = asset('storage/' . $path);
+        } elseif ($request->input('image') === '') {
+             $validated['image'] = null;
+        }
 
         $offer->update($validated);
 

@@ -57,6 +57,11 @@ export default function EditBrandPage({ params }) {
 
             if (formData.logo instanceof File) {
                 data.append('logo', formData.logo);
+            } else if (typeof formData.logo === 'string' && formData.logo.trim() !== '') {
+                data.append('logo', formData.logo);
+            } else if (!formData.logo) {
+                // If logo is empty/null, send empty string to signal deletion/clearing
+                data.append('logo', '');
             }
             // For Update, usually don't need to check string URL unless we want to allow manually editing URL text, 
             // but ImageUpload main usage is file selection or keeping existing.

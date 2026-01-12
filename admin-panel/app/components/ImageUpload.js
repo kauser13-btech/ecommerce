@@ -10,8 +10,8 @@ export default function ImageUpload({
     onChange,
     multiple = false,
     label = "Upload Image",
-    helpText = "PNG, JPG, GIF up to 2MB",
-    maxSize = 2 * 1024 * 1024 // 2MB default
+    helpText = "PNG, JPG",
+    maxSize = Infinity // No limit by default
 }) {
     const fileInputRef = useRef(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,14 +27,88 @@ export default function ImageUpload({
     const images = multiple ? (Array.isArray(value) ? value : []) : (value ? [value] : []);
 
     const validateFile = (file) => {
-        if (file.size > maxSize) {
-            toast.error(`File size exceeds limit of ${maxSize / (1024 * 1024)}MB`);
+        // Strict MIME type check
+        const validTypes = ['image/jpeg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            toast.error('Only .jpg and .png files are allowed');
             return false;
         }
 
-        // Optional: Check mime type if strictly required, but accept="image/*" handles most.
-        // Let's rely on accept prop for type, but strict size check here.
         return true;
+    };
+
+    const resizeImage = (file) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_DIMENSION = 1028;
+                let width = img.width;
+                let height = img.height;
+
+                // Calculate new dimensions (contain)
+                if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                    if (width > height) {
+                        height = Math.round((height * MAX_DIMENSION) / width);
+                        width = MAX_DIMENSION;
+                    } else {
+                        width = Math.round((width * MAX_DIMENSION) / height);
+                        height = MAX_DIMENSION;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                        return;
+                    }
+                    // Create new file with original name and type (or strictly png/jpg)
+                    const newFile = new File([blob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now(),
+                    });
+                    URL.revokeObjectURL(img.src);
+                    resolve(newFile);
+                }, file.type, 0.9);
+            };
+
+            img.onerror = (error) => {
+                URL.revokeObjectURL(img.src);
+                reject(error);
+            };
+        });
+    };
+
+    const processFiles = async (files) => {
+        const validFiles = files.filter(validateFile);
+
+        if (validFiles.length > 0) {
+            const loadingToast = toast.loading('Processing images...');
+            try {
+                const resizedFiles = await Promise.all(validFiles.map(resizeImage));
+
+                if (multiple) {
+                    onChange([...images, ...resizedFiles]);
+                } else {
+                    onChange(resizedFiles[0]);
+                }
+                setIsModalOpen(false);
+                toast.dismiss(loadingToast);
+                toast.success('Image added successfully');
+            } catch (error) {
+                console.error('Image processing failed:', error);
+                toast.dismiss(loadingToast);
+                toast.error('Failed to process image');
+            }
+        }
     };
 
     const fetchMedia = async () => {
@@ -58,20 +132,6 @@ export default function ImageUpload({
         processFiles(files);
         // Reset input so same file can be selected again if needed
         if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const processFiles = (files) => {
-        const validFiles = files.filter(validateFile);
-
-        if (validFiles.length > 0) {
-            if (multiple) {
-                onChange([...images, ...validFiles]);
-            } else {
-                onChange(validFiles[0]);
-            }
-            setIsModalOpen(false);
-            toast.success('Image added successfully');
-        }
     };
 
     const handleRemove = (index) => {

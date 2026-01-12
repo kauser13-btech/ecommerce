@@ -72,6 +72,10 @@ export default function EditOfferPage({ params }) {
 
             if (formData.image instanceof File) {
                 data.append('image', formData.image);
+            } else if (typeof formData.image === 'string' && formData.image.trim() !== '') {
+                data.append('image', formData.image);
+            } else if (!formData.image) {
+                data.append('image', '');
             } else if (typeof formData.image === 'string') {
                 // If it's a string, we might not need to send it if backend ignores missing 'image' key,
                 // OR we send it as 'image_url' if backend supports it.

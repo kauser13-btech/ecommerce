@@ -225,258 +225,284 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        return DB::transaction(function () use ($request) {
-            try {
-                // Remove 'sku' from required validation as it's auto-generated
-                $validated = $request->validate([
-                    'name' => 'required|string|max:255',
-                    'slug' => 'required|string|unique:products,slug',
-                    // 'sku' => 'required|string|unique:products,sku', // Auto-generated now
-                    'price' => 'required|integer',
-                    'original_price' => 'nullable|integer',
-                    'stock' => 'required|integer',
-                    'category_id' => 'required|exists:categories,id',
-                    'brand_id' => 'required|exists:brands,id',
-                    'image' => 'nullable|string',
-                    'images' => 'nullable', 
-                    'description' => 'nullable|string',
-                    'features' => 'nullable|string',
-                    'specifications' => 'nullable|json',
-                    'is_active' => 'boolean',
-                    'is_featured' => 'boolean',
-                    'is_new' => 'boolean',
-                    'is_preorder' => 'boolean',
-                    'options' => 'nullable|json',
-                    'variants' => 'nullable|json',
-                    'product_colors' => 'nullable',
-                ]);
+        try {
+            return DB::transaction(function () use ($request) {
+                try {
+                    // Remove 'sku' from required validation as it's auto-generated
+                    $validated = $request->validate([
+                        'name' => 'required|string|max:255',
+                        'slug' => 'required|string|unique:products,slug',
+                        // 'sku' => 'required|string|unique:products,sku', // Auto-generated now
+                        'price' => 'required|integer',
+                        'original_price' => 'nullable|integer',
+                        'stock' => 'required|integer',
+                        'category_id' => 'required|exists:categories,id',
+                        'brand_id' => 'required|exists:brands,id',
+                        'image' => 'nullable|string',
+                        'images' => 'nullable', 
+                        'description' => 'nullable|string',
+                        'features' => 'nullable|string',
+                        'specifications' => 'nullable|json',
+                        'is_active' => 'boolean',
+                        'is_featured' => 'boolean',
+                        'is_new' => 'boolean',
+                        'is_preorder' => 'boolean',
+                        'options' => 'nullable|json',
+                        'variants' => 'nullable|json',
+                        'product_colors' => 'nullable',
+                    ]);
 
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                \Log::error('Product Create Validation Error: ' . json_encode($e->errors()));
-                throw $e;
-            }
-
-            $data = $validated;
-            
-            // Auto-generate SKU for Product
-            $data['sku'] = $this->generateUniqueSku();
-
-            if (isset($data['options']) && is_string($data['options'])) {
-                $data['options'] = json_decode($data['options'], true);
-            }
-            
-            // Image handling (same as before)
-            $finalImages = [];
-            if ($request->has('existing_images')) {
-                $existingInputs = $request->input('existing_images');
-                if (is_array($existingInputs)) {
-                    $finalImages = $existingInputs;
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    throw $e;
                 }
-            }
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('products', 'public');
-                    $finalImages[] = asset('storage/' . $path);
-                }
-            }
-            if (count($finalImages) > 0) {
-                $data['images'] = $finalImages;
-                if (empty($data['image'])) {
-                    $data['image'] = $finalImages[0];
-                }
-            }
 
-            // Product Colors (same as before)
-            $finalColors = [];
-            if ($request->has('product_colors')) {
-                $colorsInput = json_decode($request->product_colors, true);
-                if (is_array($colorsInput)) {
-                    foreach ($colorsInput as $index => $colorData) {
-                        if ($request->hasFile("color_images.$index")) {
-                            $path = $request->file("color_images.$index")->store('products/colors', 'public');
-                            $colorData['image'] = asset('storage/' . $path);
-                        }
-                        $finalColors[] = [
-                            'name' => $colorData['name'],
-                            'image' => $colorData['image'] ?? null,
-                            'code' => $colorData['code'] ?? null
-                        ];
+                $data = $validated;
+                
+                // Auto-generate SKU for Product
+                $data['sku'] = $this->generateUniqueSku();
+
+                if (isset($data['options']) && is_string($data['options'])) {
+                    $data['options'] = json_decode($data['options'], true);
+                }
+                
+                // Image handling (same as before)
+                $finalImages = [];
+                if ($request->has('existing_images')) {
+                    $existingInputs = $request->input('existing_images');
+                    if (is_array($existingInputs)) {
+                        $finalImages = $existingInputs;
                     }
                 }
-            }
-            $data['product_colors'] = $finalColors;
-
-            $product = Product::create($data);
-
-            // Handle Variants with Automatic SKU
-            if ($request->has('variants')) {
-                $variants = json_decode($request->variants, true); 
-                if (is_array($variants)) {
-                   
-                   foreach ($variants as $index => $variantData) {
-                        // Generate Variant SKU
-                        $variantData['sku'] = $this->generateUniqueSku();
-
-                        if ($request->hasFile("variant_images.$index")) {
-                            $path = $request->file("variant_images.$index")->store('products', 'public');
-                            $variantData['image'] = asset('storage/' . $path);
-                        }
-                        // Ensure product_id is set (laravel relationship does it, but good to be safe if manual)
-                        // $variantData['product_id'] = $product->id; 
-                        
-                        $product->variants()->create($variantData);
-                   }
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $image) {
+                        $path = $image->store('products', 'public');
+                        $finalImages[] = asset('storage/' . $path);
+                    }
                 }
-            }
+                if (count($finalImages) > 0) {
+                    $data['images'] = $finalImages;
+                    if (empty($data['image'])) {
+                        $data['image'] = $finalImages[0];
+                    }
+                }
 
+                // Product Colors (same as before)
+                $finalColors = [];
+                if ($request->has('product_colors')) {
+                    $colorsInput = json_decode($request->product_colors, true);
+                    if (is_array($colorsInput)) {
+                        foreach ($colorsInput as $index => $colorData) {
+                            if ($request->hasFile("color_images.$index")) {
+                                $path = $request->file("color_images.$index")->store('products/colors', 'public');
+                                $colorData['image'] = asset('storage/' . $path);
+                            }
+                            $finalColors[] = [
+                                'name' => $colorData['name'],
+                                'image' => $colorData['image'] ?? null,
+                                'code' => $colorData['code'] ?? null
+                            ];
+                        }
+                    }
+                }
+                $data['product_colors'] = $finalColors;
+
+                $product = Product::create($data);
+
+                // Handle Variants with Automatic SKU
+                if ($request->has('variants')) {
+                    $variants = json_decode($request->variants, true); 
+                    if (is_array($variants)) {
+                       
+                       foreach ($variants as $index => $variantData) {
+                            // Generate Variant SKU
+                            $variantData['sku'] = $this->generateUniqueSku();
+
+                            if ($request->hasFile("variant_images.$index")) {
+                                $path = $request->file("variant_images.$index")->store('products', 'public');
+                                $variantData['image'] = asset('storage/' . $path);
+                            }
+                            // Ensure product_id is set (laravel relationship does it, but good to be safe if manual)
+                            // $variantData['product_id'] = $product->id; 
+                            
+                            $product->variants()->create($variantData);
+                       }
+                    }
+                }
+
+                return response()->json([
+                    'message' => 'Product created successfully',
+                    'data' => $product
+                ], 201);
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            \Log::error('Product Create Failed: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Product created successfully',
-                'data' => $product
-            ], 201);
-        });
+                'message' => 'Failed to create product.',
+                'errors' => [
+                    'server' => ['An unexpected error occurred: ' . $e->getMessage()]
+                ]
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $product = Product::findOrFail($id);
+        try {
+            $product = Product::findOrFail($id);
 
-        return DB::transaction(function () use ($request, $product, $id) {
-            try {
-                $validated = $request->validate([
-                    'name' => 'string|max:255',
-                    'slug' => 'string|unique:products,slug,' . $id,
-                    'price' => 'integer',
-                    'original_price' => 'nullable|integer',
-                    'stock' => 'integer',
-                    'category_id' => 'exists:categories,id',
-                    'brand_id' => 'exists:brands,id',
-                    'image' => 'nullable|string',
-                    'images' => 'nullable',
-                    'existing_images' => 'nullable|array', 
-                    'description' => 'nullable|string',
-                    'features' => 'nullable|string',
-                    'specifications' => 'nullable|json',
-                    'is_active' => 'boolean',
-                    'is_featured' => 'boolean',
-                    'is_new' => 'boolean',
-                    'is_preorder' => 'boolean',
-                    'options' => 'nullable|json',
-                    'variants' => 'nullable|json',
-                    'product_colors' => 'nullable', 
-                ]);
+            return DB::transaction(function () use ($request, $product, $id) {
+                try {
+                    $validated = $request->validate([
+                        'name' => 'string|max:255',
+                        'slug' => 'string|unique:products,slug,' . $id,
+                        'price' => 'integer',
+                        'original_price' => 'nullable|integer',
+                        'stock' => 'integer',
+                        'category_id' => 'exists:categories,id',
+                        'brand_id' => 'exists:brands,id',
+                        'image' => 'nullable|string',
+                        'images' => 'nullable',
+                        'existing_images' => 'nullable|array', 
+                        'description' => 'nullable|string',
+                        'features' => 'nullable|string',
+                        'specifications' => 'nullable|json',
+                        'is_active' => 'boolean',
+                        'is_featured' => 'boolean',
+                        'is_new' => 'boolean',
+                        'is_preorder' => 'boolean',
+                        'options' => 'nullable|json',
+                        'variants' => 'nullable|json',
+                        'product_colors' => 'nullable', 
+                    ]);
 
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                \Log::error('Product Update Validation Error: ' . json_encode($e->errors()));
-                throw $e;
-            }
-
-            $data = $validated;
-            
-            // SKU is not updatable via this API to keep it stable, or use existing logic if sent? 
-            // Request says "Replace current... with fixed 6-digit". 
-            // If user wants to re-generate SKU for existing product, that's a separate migration task.
-            // For UPDATE, we keep existing SKU.
-
-            if (isset($data['options']) && is_string($data['options'])) {
-                $data['options'] = json_decode($data['options'], true);
-            }
-
-            // Images (same logic)
-            $finalImages = [];
-            if ($request->has('existing_images')) {
-                $finalImages = $request->input('existing_images');
-                if (!is_array($finalImages)) $finalImages = [];
-            }
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('products', 'public');
-                    $finalImages[] = asset('storage/' . $path);
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    throw $e;
                 }
-            }
-            if ($request->has('existing_images') || $request->hasFile('images')) {
-                 $data['images'] = $finalImages;
-                if (count($finalImages) > 0) {
-                    if (empty($data['image']) || !in_array($data['image'], $finalImages)) {
-                         $data['image'] = $finalImages[0];
+
+                $data = $validated;
+                
+                // SKU is not updatable via this API to keep it stable, or use existing logic if sent? 
+                // Request says "Replace current... with fixed 6-digit". 
+                // If user wants to re-generate SKU for existing product, that's a separate migration task.
+                // For UPDATE, we keep existing SKU.
+
+                if (isset($data['options']) && is_string($data['options'])) {
+                    $data['options'] = json_decode($data['options'], true);
+                }
+
+                // Images (same logic)
+                $finalImages = [];
+                if ($request->has('existing_images')) {
+                    $finalImages = $request->input('existing_images');
+                    if (!is_array($finalImages)) $finalImages = [];
+                }
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $image) {
+                        $path = $image->store('products', 'public');
+                        $finalImages[] = asset('storage/' . $path);
                     }
-                } else {
-                    $data['image'] = null;
                 }
-            }
+                if ($request->has('existing_images') || $request->hasFile('images')) {
+                     $data['images'] = $finalImages;
+                    if (count($finalImages) > 0) {
+                        if (empty($data['image']) || !in_array($data['image'], $finalImages)) {
+                             $data['image'] = $finalImages[0];
+                        }
+                    } else {
+                        $data['image'] = null;
+                    }
+                }
 
-            // Colors (same logic)
-            if ($request->has('product_colors')) {
-                 $colorsInput = json_decode($request->product_colors, true);
-                 $finalColors = [];
-                 if (is_array($colorsInput)) {
-                     foreach ($colorsInput as $index => $colorData) {
-                         if ($request->hasFile("color_images.$index")) {
-                             $path = $request->file("color_images.$index")->store('products/colors', 'public');
-                             $colorData['image'] = asset('storage/' . $path);
+                // Colors (same logic)
+                if ($request->has('product_colors')) {
+                     $colorsInput = json_decode($request->product_colors, true);
+                     $finalColors = [];
+                     if (is_array($colorsInput)) {
+                         foreach ($colorsInput as $index => $colorData) {
+                             if ($request->hasFile("color_images.$index")) {
+                                 $path = $request->file("color_images.$index")->store('products/colors', 'public');
+                                 $colorData['image'] = asset('storage/' . $path);
+                             }
+                             if (empty($colorData['image'])) $colorData['image'] = null;
+
+                             $finalColors[] = [
+                                 'name' => $colorData['name'],
+                                 'image' => $colorData['image'],
+                                 'code' => $colorData['code'] ?? null
+                             ];
                          }
-                         if (empty($colorData['image'])) $colorData['image'] = null;
-
-                         $finalColors[] = [
-                             'name' => $colorData['name'],
-                             'image' => $colorData['image'],
-                             'code' => $colorData['code'] ?? null
-                         ];
                      }
-                 }
-                 $data['product_colors'] = $finalColors;
-            }
+                     $data['product_colors'] = $finalColors;
+                }
 
-            $product->update($data);
+                $product->update($data);
 
-            // Variants with Automatic SKU for NEW variants
-            if ($request->has('variants')) {
-                 $variantsInput = json_decode($request->variants, true);
-                 if (is_array($variantsInput)) {
-                     
-                     $existingIds = [];
-                     foreach ($variantsInput as $index => $variantData) {
+                // Variants with Automatic SKU for NEW variants
+                if ($request->has('variants')) {
+                     $variantsInput = json_decode($request->variants, true);
+                     if (is_array($variantsInput)) {
                          
-                         $variant = null;
-                         if ($request->hasFile("variant_images.$index")) {
-                            $path = $request->file("variant_images.$index")->store('products', 'public');
-                            $variantData['image'] = asset('storage/' . $path);
-                         } elseif (isset($variantData['image']) && $variantData['image'] === null) {
-                             $variantData['image'] = null;
-                         }
+                         $existingIds = [];
+                         foreach ($variantsInput as $index => $variantData) {
+                             
+                             $variant = null;
+                             if ($request->hasFile("variant_images.$index")) {
+                                $path = $request->file("variant_images.$index")->store('products', 'public');
+                                $variantData['image'] = asset('storage/' . $path);
+                             } elseif (isset($variantData['image']) && $variantData['image'] === null) {
+                                 $variantData['image'] = null;
+                             }
 
-                         if (isset($variantData['id'])) {
-                             $variant = $product->variants()->find($variantData['id']);
-                         }
-                         if (!isset($variantData['id']) && !$variant) {
-                             // Trying to find by SKU? No, SKU is auto-generated now.
-                             // Logic: If it has ID, it's existing. If not, it's new.
-                             // What if frontend sends SKU? We ignore/overwrite it if it's new?
-                             // Request says "Ensure system generates...".
-                             // So for NEW variants, we MUST generate.
-                         }
+                             if (isset($variantData['id'])) {
+                                 $variant = $product->variants()->find($variantData['id']);
+                             }
+                             if (!isset($variantData['id']) && !$variant) {
+                                 // Trying to find by SKU? No, SKU is auto-generated now.
+                                 // Logic: If it has ID, it's existing. If not, it's new.
+                                 // What if frontend sends SKU? We ignore/overwrite it if it's new?
+                                 // Request says "Ensure system generates...".
+                                 // So for NEW variants, we MUST generate.
+                             }
 
-                         if ($variant) {
-                             // Update existing
-                             // Don't update SKU of existing variant to maintain integrity
-                             unset($variantData['sku']); 
-                             $variant->update($variantData);
-                             $existingIds[] = $variant->id;
-                         } else {
-                             // Create new
-                             $variantData['sku'] = $this->generateUniqueSku();
-                             $newVariant = $product->variants()->create($variantData);
-                             $existingIds[] = $newVariant->id;
+                             if ($variant) {
+                                 // Update existing
+                                 // Don't update SKU of existing variant to maintain integrity
+                                 unset($variantData['sku']); 
+                                 $variant->update($variantData);
+                                 $existingIds[] = $variant->id;
+                             } else {
+                                 // Create new
+                                 $variantData['sku'] = $this->generateUniqueSku();
+                                 $newVariant = $product->variants()->create($variantData);
+                                 $existingIds[] = $newVariant->id;
+                             }
                          }
+                         $product->variants()->whereNotIn('id', $existingIds)->delete();
                      }
-                     $product->variants()->whereNotIn('id', $existingIds)->delete();
-                 }
-            }
+                }
 
+                return response()->json([
+                    'message' => 'Product updated successfully',
+                    'data' => $product
+                ]);
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+             return response()->json([
+                'message' => 'Product not found.',
+            ], 404);
+        } catch (\Throwable $e) {
+            \Log::error('Product Update Failed: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Product updated successfully',
-                'data' => $product
-            ]);
-        });
+                'message' => 'Failed to update product.',
+                'errors' => [
+                    'server' => ['An unexpected error occurred: ' . $e->getMessage()]
+                ]
+            ], 500);
+        }
     }
 
     // ... (rest of methods)

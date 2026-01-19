@@ -33,8 +33,7 @@ export default function CartModal() {
 
     const subtotal = getCartTotal();
     const shipping = subtotal > 0 ? 100 : 0;
-    const tax = Math.round(subtotal * 0.05);
-    const total = subtotal + shipping + tax;
+    const total = subtotal + shipping;
 
     return (
         <div className="fixed inset-0 z-50 overflow-hidden">
@@ -158,10 +157,7 @@ export default function CartModal() {
                                     <span>Shipping</span>
                                     <span>{shipping === 0 ? 'FREE' : `৳${shipping.toLocaleString()}`}</span>
                                 </div>
-                                <div className="flex justify-between text-gray-600">
-                                    <span>Tax (5%)</span>
-                                    <span>৳{tax.toLocaleString()}</span>
-                                </div>
+
                                 <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t border-dashed border-gray-200">
                                     <span>Total</span>
                                     <span className="text-orange-600">৳{total.toLocaleString()}</span>

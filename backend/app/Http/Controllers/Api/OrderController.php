@@ -123,7 +123,6 @@ class OrderController extends Controller
 
             // Calculate Totals
             $shippingCost = $request->delivery_method === 'pickup' ? 0 : 400;
-            $tax = 0; 
             $discount = 0;
 
             if ($request->promo_code) {
@@ -140,7 +139,7 @@ class OrderController extends Controller
                 }
             }
             
-            $totalBeforeDiscount = $subtotal + $shippingCost + $tax;
+            $totalBeforeDiscount = $subtotal + $shippingCost;
             $discount = min($discount, $totalBeforeDiscount);
             $total = $totalBeforeDiscount - $discount;
 
@@ -163,7 +162,6 @@ class OrderController extends Controller
                 'shipping_address' => $fullShippingAddress,
                 'billing_address' => $fullShippingAddress,
                 'subtotal' => $subtotal,
-                'tax' => $tax,
                 'shipping_cost' => $shippingCost,
                 'discount' => $discount,
                 'total' => $total,

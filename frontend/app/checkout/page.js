@@ -116,7 +116,7 @@ export default function CheckoutPage() {
         }
     };
 
-    const courierCost = 400;
+    const courierCost = 100;
     const shippingCost = formData.delivery_method === 'pickup' ? 0 : courierCost;
     const subtotal = getCartTotal();
     const finalTotal = subtotal + shippingCost - discountAmount;
@@ -236,7 +236,7 @@ export default function CheckoutPage() {
                                             </div>
                                             <span className="font-medium text-gray-900">Courier Delivery</span>
                                         </div>
-                                        <span className="font-bold text-gray-900">৳{courierCost.toFixed(2)}</span>
+                                        <span className="font-bold text-gray-900">৳{courierCost.toFixed(0)}</span>
                                     </label>
                                     <label className="p-4 bg-white flex items-center justify-between cursor-pointer">
                                         <div className="flex items-center gap-3">
@@ -451,7 +451,7 @@ export default function CheckoutPage() {
                                             Shipping
                                             <Info size={14} className="text-gray-400" />
                                         </span>
-                                        <span className="text-gray-400">৳ {shippingCost.toFixed(2)}</span>
+                                        <span className="text-gray-400">৳ {shippingCost.toFixed(0)}</span>
                                     </div>
                                     {discountAmount > 0 && (
                                         <div className="flex justify-between text-sm text-green-600 font-medium">

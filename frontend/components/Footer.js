@@ -42,6 +42,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blogs" className="text-gray-500 hover:text-orange-600 transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-orange-500 transition-colors"></span>
+                  Blogs
+                </Link>
+              </li>
+              <li>
                 <Link href="/products?filter=new" className="text-gray-500 hover:text-orange-600 transition-colors flex items-center gap-2 group">
                   <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-orange-500 transition-colors"></span>
                   New Arrivals

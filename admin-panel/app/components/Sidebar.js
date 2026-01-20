@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag, ChevronDown, ChevronRight, Users, Settings, List, Home } from 'lucide-react';
+import { LayoutDashboard, Package, Tag, Ticket, Image as ImageIcon, LogOut, Star, Percent, FolderTree, ShoppingBag, ChevronDown, ChevronRight, Users, Settings, List, Home, FileText } from 'lucide-react';
 
 
 const menuItems = [
@@ -28,6 +28,7 @@ const menuItems = [
         ]
     },
     { name: 'Categories', href: '/dashboard/categories', icon: FolderTree },
+    { name: 'Blogs', href: '/dashboard/blogs', icon: FileText },
     { name: 'Menus', href: '/dashboard/menus', icon: List },
     { name: 'Brands', href: '/dashboard/brands', icon: Star },
     { name: 'Offers', href: '/dashboard/offers', icon: Percent },

@@ -6,6 +6,7 @@ import ShopByBrands from '@/components/ShopByBrands';
 import NewArrivalsGrid from '@/components/NewArrivalsGrid';
 import FeaturedProductGrid from '@/components/FeaturedProductGrid';
 import FeaturesGrid from '@/components/FeaturesGrid';
+import FeaturedBlogs from '@/components/FeaturedBlogs';
 
 
 // Fetch data on server-side
@@ -48,11 +49,24 @@ async function getFeaturedProducts() {
   }
 }
 
+async function getFeaturedBlogs() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/blogs/featured`, {
+      cache: 'no-store'
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching featured blogs:', error);
+    return [];
+  }
+}
+
 export default async function Home() {
-  const [offers, newArrivals, featuredProducts] = await Promise.all([
+  const [offers, newArrivals, featuredProducts, featuredBlogs] = await Promise.all([
     getOffers(),
     getNewArrivals(),
-    getFeaturedProducts()
+    getFeaturedProducts(),
+    getFeaturedBlogs()
   ]);
 
   return (
@@ -71,6 +85,8 @@ export default async function Home() {
         <ShopByBrands />
 
         <NewArrivalsGrid newArrivals={newArrivals} />
+
+        <FeaturedBlogs blogs={featuredBlogs} />
 
       </main>
 

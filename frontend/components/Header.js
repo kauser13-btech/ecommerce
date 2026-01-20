@@ -13,7 +13,7 @@ import FacebookIcon from "@/assets/icons/facebook.svg";
 import InstagramIcon from "@/assets/icons/instagram.svg";
 import TiktokIcon from "@/assets/icons/tiktok.svg";
 import PhoneIcon from "@/assets/icons/phone.svg";
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Link as LinkIcon } from 'lucide-react';
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,6 +111,9 @@ export default function Header() {
             </a>
           </div>
           <div className="flex items-center gap-2 font-medium">
+            <LinkIcon className="w-3 h-3" />
+            <Link href="/blogs" className="hover:text-orange-500 transition-colors mr-4">Blogs</Link>
+
             <PhoneIcon className="w-3 h-3" />
             <a href="tel:01842430000" className="hover:text-orange-500 transition-colors">Hotline : 01842430000</a>
           </div>

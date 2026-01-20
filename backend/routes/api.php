@@ -14,6 +14,11 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/admin/login', [AuthController::class, 'adminLogin']);
 
+// Public Blog Routes
+Route::get('/blogs', [\App\Http\Controllers\Api\BlogController::class, 'indexPublic']);
+Route::get('/blogs/featured', [\App\Http\Controllers\Api\BlogController::class, 'featured']);
+Route::get('/blogs/{slug}', [\App\Http\Controllers\Api\BlogController::class, 'showPublic']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
@@ -34,6 +39,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Api\AdminUserController::class, 'resetPassword']);
         Route::post('/email/send-otp', [\App\Http\Controllers\Api\AdminUserController::class, 'sendOtp']);
         Route::post('/email/verify-otp', [\App\Http\Controllers\Api\AdminUserController::class, 'verifyOtp']);
+
+        // Admin Blog Management
+        Route::get('/blogs', [\App\Http\Controllers\Api\BlogController::class, 'indexAdmin']);
+        Route::post('/blogs', [\App\Http\Controllers\Api\BlogController::class, 'store']);
+        Route::put('/blogs/{id}', [\App\Http\Controllers\Api\BlogController::class, 'update']);
+        Route::delete('/blogs/{id}', [\App\Http\Controllers\Api\BlogController::class, 'destroy']);
     });
 });
 

@@ -28,6 +28,7 @@ const menuItems = [
         ]
     },
     { name: 'Categories', href: '/dashboard/categories', icon: FolderTree },
+    { name: 'Tags', href: '/dashboard/tags', icon: Tag },
     { name: 'Blogs', href: '/dashboard/blogs', icon: FileText },
     { name: 'Menus', href: '/dashboard/menus', icon: List },
     { name: 'Brands', href: '/dashboard/brands', icon: Star },

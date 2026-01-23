@@ -23,11 +23,14 @@ export default function ProductForm({ initialData, isEdit }) {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
+    const [tags, setTags] = useState([]);
     const [options, setOptions] = useState([]);
     const [errorModal, setErrorModal] = useState({ isOpen: false, errors: null });
     const [slugModalOpen, setSlugModalOpen] = useState(false);
     const [openColorPicker, setOpenColorPicker] = useState(null);
     const [pendingSaveRedirect, setPendingSaveRedirect] = useState(null);
+    const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
+    const [tagSearch, setTagSearch] = useState('');
 
     const [images, setImages] = useState([]); // Unified state: { type: 'existing'|'new', url: string, file?: File }
     const [specs, setSpecs] = useState([]);
@@ -45,6 +48,7 @@ export default function ProductForm({ initialData, isEdit }) {
         stock: '0',
         category_id: '',
         brand_id: '',
+        tags: [],
         image: '',
         is_active: true,
         is_featured: false,
@@ -69,6 +73,7 @@ export default function ProductForm({ initialData, isEdit }) {
                 ...initialData,
                 category_id: initialData.category?.id || initialData.category_id,
                 brand_id: initialData.brand?.id || initialData.brand_id,
+                tags: initialData.tags ? initialData.tags.map(t => t.id) : [],
                 features: initialData.features || '', // Load features
             });
 
@@ -125,12 +130,14 @@ export default function ProductForm({ initialData, isEdit }) {
 
     const fetchDependencies = async () => {
         try {
-            const [catsRes, brandsRes] = await Promise.all([
+            const [catsRes, brandsRes, tagsRes] = await Promise.all([
                 api.get('/categories'),
-                api.get('/brands')
+                api.get('/brands'),
+                api.get('/tags')
             ]);
             setCategories(catsRes.data.data || catsRes.data);
             setBrands(brandsRes.data.data || brandsRes.data);
+            setTags(tagsRes.data.data || tagsRes.data);
         } catch (error) {
             console.error('Error fetching dependencies:', error);
         }
@@ -275,6 +282,7 @@ export default function ProductForm({ initialData, isEdit }) {
                 is_featured: dataToSubmit.is_featured ? true : false,
                 is_new: dataToSubmit.is_new ? true : false,
                 is_preorder: dataToSubmit.is_preorder ? true : false,
+                tags: dataToSubmit.tags,
             };
 
             // Clean up empty original_price
@@ -852,6 +860,96 @@ export default function ProductForm({ initialData, isEdit }) {
                                         <option key={b.id} value={b.id}>{b.name}</option>
                                     ))}
                                 </select>
+                            </div>
+
+                            <div className="relative">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                                <div
+                                    className="min-h-[42px] p-1.5 border border-gray-300 rounded-lg flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 bg-white cursor-text"
+                                    onClick={() => document.getElementById('tag-search-input')?.focus()}
+                                >
+                                    {(formData.tags || []).map(tagId => {
+                                        const tag = tags.find(t => t.id === tagId);
+                                        if (!tag) return null;
+                                        return (
+                                            <span key={tagId} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-700 text-sm border border-blue-100">
+                                                {tag.name}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            tags: prev.tags.filter(id => id !== tagId)
+                                                        }));
+                                                    }}
+                                                    className="hover:text-blue-900"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </span>
+                                        );
+                                    })}
+                                    <input
+                                        id="tag-search-input"
+                                        type="text"
+                                        placeholder={(formData.tags || []).length === 0 ? "Select tags..." : ""}
+                                        className="flex-1 min-w-[100px] outline-none text-sm py-1 px-1 bg-transparent"
+                                        onFocus={() => setTagsDropdownOpen(true)}
+                                        onBlur={() => setTimeout(() => setTagsDropdownOpen(false), 200)}
+                                        onChange={(e) => setTagSearch(e.target.value)}
+                                        value={tagSearch}
+                                    />
+                                </div>
+
+                                {tagsDropdownOpen && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                                        {tags.filter(tag =>
+                                            !(formData.tags || []).includes(tag.id) &&
+                                            tag.name.toLowerCase().includes(tagSearch.toLowerCase())
+                                        ).length > 0 ? (
+                                            tags
+                                                .filter(tag =>
+                                                    !(formData.tags || []).includes(tag.id) &&
+                                                    tag.name.toLowerCase().includes(tagSearch.toLowerCase())
+                                                )
+                                                .map(tag => (
+                                                    <button
+                                                        key={tag.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                tags: [...(prev.tags || []), tag.id]
+                                                            }));
+                                                            setTagSearch('');
+                                                            document.getElementById('tag-search-input')?.focus();
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between group"
+                                                    >
+                                                        <span className="text-gray-700 group-hover:text-gray-900">{tag.name}</span>
+                                                        <span className="text-xs text-gray-400 font-mono">{tag.slug}</span>
+                                                    </button>
+                                                ))
+                                        ) : (
+                                            <div className="px-4 py-3 text-sm text-gray-500 text-center italic">
+                                                {tags.length === 0 ? 'No tags created yet' : 'No matching tags found'}
+                                            </div>
+                                        )}
+                                        <div className="p-2 border-t border-gray-100 bg-gray-50">
+                                            <button
+                                                type="button"
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    window.open('/dashboard/tags', '_blank');
+                                                }}
+                                                className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                                            >
+                                                <Plus size={14} /> Manage Tags
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div>

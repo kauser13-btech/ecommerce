@@ -143,7 +143,7 @@ export default async function ProductsPage(props) {
             <aside className="w-64 flex-shrink-0 hidden lg:block">
               <div className="sticky top-32 space-y-8">
                 {/* Categories */}
-                <div>
+                {/* <div>
                   <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">Categories</h3>
                   <div className="space-y-1">
                     <Link
@@ -171,7 +171,7 @@ export default async function ProductsPage(props) {
                       </Link>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Brands */}
                 <div>
@@ -209,6 +209,7 @@ export default async function ProductsPage(props) {
             </div>
           </div>
         </div>
+
       </main>
 
       <Footer />

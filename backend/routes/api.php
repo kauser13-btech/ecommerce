@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\OrderController;
 
 use App\Http\Controllers\Api\AuthController;
@@ -78,6 +79,9 @@ Route::post('/brands', [BrandController::class, 'store']);
 Route::post('/brands/reorder', [BrandController::class, 'reorder']);
 Route::put('/brands/{id}', [BrandController::class, 'update']);
 Route::delete('/brands/{id}', [BrandController::class, 'destroy']);
+
+// Tags
+Route::apiResource('tags', TagController::class);
 
 // Media
 Route::get('/media', [App\Http\Controllers\Api\MediaController::class, 'index']);

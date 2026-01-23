@@ -14,7 +14,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand'])->withCount('variants');
+        $query = Product::with(['category', 'brand', 'tags'])->withCount('variants');
         
         if (!$request->boolean('include_inactive')) {
              $query->where('is_active', true);
@@ -107,7 +107,7 @@ class ProductController extends Controller
     public function show($slug)
     {
 
-        $product = Product::with(['category', 'brand', 'variants'])
+        $product = Product::with(['category', 'brand', 'variants', 'tags'])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
@@ -250,6 +250,8 @@ class ProductController extends Controller
                         'options' => 'nullable|json',
                         'variants' => 'nullable|json',
                         'product_colors' => 'nullable',
+                        'tags' => 'nullable|array',
+                        'tags.*' => 'exists:tags,id',
                     ]);
 
                 } catch (\Illuminate\Validation\ValidationException $e) {
@@ -307,6 +309,10 @@ class ProductController extends Controller
                 $data['product_colors'] = $finalColors;
 
                 $product = Product::create($data);
+
+                if ($request->has('tags')) {
+                    $product->tags()->attach($request->tags);
+                }
 
                 // Handle Variants with Automatic SKU
                 if ($request->has('variants')) {
@@ -375,6 +381,8 @@ class ProductController extends Controller
                         'options' => 'nullable|json',
                         'variants' => 'nullable|json',
                         'product_colors' => 'nullable', 
+                        'tags' => 'nullable|array',
+                        'tags.*' => 'exists:tags,id', 
                     ]);
 
                 } catch (\Illuminate\Validation\ValidationException $e) {
@@ -435,6 +443,10 @@ class ProductController extends Controller
                          }
                      }
                      $data['product_colors'] = $finalColors;
+                }
+                
+                if ($request->has('tags')) {
+                    $product->tags()->sync($request->tags);
                 }
 
                 $product->update($data);
@@ -519,7 +531,7 @@ class ProductController extends Controller
 
     public function adminShow($id)
     {
-        $product = Product::with(['category', 'brand', 'variants'])
+        $product = Product::with(['category', 'brand', 'variants', 'tags'])
             ->findOrFail($id);
 
         return response()->json($product);

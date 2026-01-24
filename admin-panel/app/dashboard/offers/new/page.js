@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import api from '@/app/lib/api';
 import ImagePicker from '@/app/components/ImagePicker';
 
@@ -98,7 +98,7 @@ export default function NewOfferPage() {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Link Source</label>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <select
                             value={linkType}
                             onChange={(e) => setLinkType(e.target.value)}

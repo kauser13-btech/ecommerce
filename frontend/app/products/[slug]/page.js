@@ -144,7 +144,18 @@ export default function ProductDetail({ params }) {
     const variant = product.variants.find(v => {
       try {
         const vAttrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
-        return Object.entries(selectedOptions).every(([key, value]) => vAttrs[key] === value);
+
+        // Convert selectedOptions keys to lowercase for lookups
+        const normalizedSelected = Object.keys(selectedOptions).reduce((acc, k) => {
+          acc[k.toLowerCase()] = String(selectedOptions[k]);
+          return acc;
+        }, {});
+
+        // Check if every attribute defined in the variant matches the selected option
+        return Object.entries(vAttrs).every(([key, value]) => {
+          const selectedVal = normalizedSelected[key.toLowerCase()];
+          return selectedVal === String(value);
+        });
       } catch (e) {
         return false;
       }

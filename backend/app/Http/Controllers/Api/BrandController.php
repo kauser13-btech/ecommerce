@@ -36,6 +36,15 @@ class BrandController extends Controller
             }
         }
 
+        if ($request->has('tag')) {
+            $tagSlug = $request->tag;
+            $query->whereHas('products', function($q) use ($tagSlug) {
+                $q->whereHas('tags', function($t) use ($tagSlug) {
+                    $t->where('slug', $tagSlug);
+                })->where('is_active', true);
+            });
+        }
+
         $brands = $query->orderBy('sort_order', 'asc')->orderBy('name', 'asc')->get();
 
         return response()->json($brands);

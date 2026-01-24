@@ -186,7 +186,7 @@ export default function EditOfferPage({ params }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Link Source
                     </label>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <select
                             value={linkType}
                             onChange={(e) => setLinkType(e.target.value)}

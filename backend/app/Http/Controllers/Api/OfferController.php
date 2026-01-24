@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 use App\Models\Offer;
 
@@ -63,9 +65,22 @@ class OfferController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
+            if ($offer->image) {
+                $oldPath = Str::after($offer->image, '/storage/');
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
             $path = $request->file('image')->store('offers', 'public');
             $validated['image'] = asset('storage/' . $path);
         } elseif ($request->input('image') === '') {
+             if ($offer->image) {
+                $oldPath = Str::after($offer->image, '/storage/');
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
              $validated['image'] = null;
         }
 
@@ -77,6 +92,14 @@ class OfferController extends Controller
     public function destroy($id)
     {
         $offer = Offer::findOrFail($id);
+        
+        if ($offer->image) {
+            $oldPath = Str::after($offer->image, '/storage/');
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
         $offer->delete();
 
         return response()->json(['message' => 'Offer deleted successfully']);

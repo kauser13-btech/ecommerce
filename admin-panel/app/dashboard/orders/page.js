@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '../../lib/api';
-import { Eye, Loader2, X, Clock, CheckCircle, AlertTriangle, XCircle, RefreshCcw } from 'lucide-react';
+import { Eye, Loader2, X, Clock, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ORDER_STATUSES = {
@@ -111,7 +111,10 @@ export default function OrdersPage() {
 
     return (
         <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Orders</h1>
+            <div className="flex items-center gap-2 mb-6">
+                <Package className="h-6 w-6" />
+                <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+            </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full text-left text-sm">

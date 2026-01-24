@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import ImageLightbox from '@/components/ImageLightbox';
+import PreOrderModal from '@/components/PreOrderModal';
 import { Maximize2, ChevronRight, Home, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useCart } from '@/context/CartContext';
@@ -27,6 +28,7 @@ export default function ProductDetail({ params }) {
 
   const { addToCart, toggleCart } = useCart();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isPreOrderModalOpen, setIsPreOrderModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [zoomOrigin, setZoomOrigin] = useState('center center');
 
@@ -99,6 +101,29 @@ export default function ProductDetail({ params }) {
       } catch (e) {
         console.error('Error parsing parsedOptions:', e);
         setParsedOptions([]);
+      }
+    }
+
+    // Initialize explicit colors if not in standard options
+    if (product?.product_colors) {
+      try {
+        const colors = typeof product.product_colors === 'string' ? JSON.parse(product.product_colors) : product.product_colors;
+        const hasColorOption = product.options && (typeof product.options === 'string' ? JSON.parse(product.options) : product.options).some(o => o.name.toLowerCase() === 'color');
+
+        if (!hasColorOption && Array.isArray(colors) && colors.length > 0) {
+          setSelectedOptions(prev => ({
+            ...prev,
+            'Color': colors[0].name
+          }));
+          // Also set initial image if color has one
+          if (colors[0].image && images.includes(colors[0].image)) {
+            setSelectedImage(images.indexOf(colors[0].image));
+          } else if (colors[0].image) {
+            // If image exists but not yet in images list? (Should be handled by useMemo logic)
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing product_colors for default selection:', e);
       }
     }
 
@@ -281,7 +306,7 @@ export default function ProductDetail({ params }) {
     return item.is_preorder === true || item.is_preorder === 1 || item.is_preorder === '1' || item.is_preorder === 'true';
   };
 
-  const isPreOrder = selectedVariant ? checkPreOrder(selectedVariant) : checkPreOrder(product);
+  const isPreOrder = checkPreOrder(product) || (selectedVariant ? checkPreOrder(selectedVariant) : false);
 
   const discountAmount = currentOriginalPrice > currentPrice ? currentOriginalPrice - currentPrice : 0;
   const discountPercent = currentOriginalPrice > currentPrice ? Math.round((discountAmount / currentOriginalPrice) * 100) : 0;
@@ -372,17 +397,38 @@ export default function ProductDetail({ params }) {
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
                   <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
+
+                  {product.tags && product.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {product.tags.map(tag => (
+                        <Link
+                          key={tag.id}
+                          href={`/products?tag=${tag.slug}`}
+                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                          #{tag.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex items-center flex-wrap gap-2">
-                    <span className="text-3xl font-bold text-gray-900">
-                      ৳ {currentPrice.toLocaleString()}
-                    </span>
-                    {discountPercent > 0 && (
-                      <span className="bg-[#ccfccb] text-[#0f5132] px-3 py-1 rounded-full text-sm font-bold">
-                        {discountPercent}% off
-                      </span>
-                    )}
-                    {currentOriginalPrice > currentPrice && (
-                      <span className="text-gray-400 line-through text-lg">৳{currentOriginalPrice.toLocaleString()}</span>
+                    {isPreOrder ? (
+                      <span className="text-3xl font-bold text-gray-900">TBD</span>
+                    ) : (
+                      <>
+                        <span className="text-3xl font-bold text-gray-900">
+                          ৳ {currentPrice.toLocaleString()}
+                        </span>
+                        {discountPercent > 0 && (
+                          <span className="bg-[#ccfccb] text-[#0f5132] px-3 py-1 rounded-full text-sm font-bold">
+                            {discountPercent}% off
+                          </span>
+                        )}
+                        {currentOriginalPrice > currentPrice && (
+                          <span className="text-gray-400 line-through text-lg">৳{currentOriginalPrice.toLocaleString()}</span>
+                        )}
+                      </>
                     )}
 
                     {isPreOrder && (
@@ -550,7 +596,13 @@ export default function ProductDetail({ params }) {
                     </div>
 
                     <button
-                      onClick={handleBuyNow}
+                      onClick={() => {
+                        if (isPreOrder) {
+                          setIsPreOrderModalOpen(true);
+                        } else {
+                          handleBuyNow();
+                        }
+                      }}
                       disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                       className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
                     >
@@ -559,7 +611,13 @@ export default function ProductDetail({ params }) {
                     </button>
 
                     <button
-                      onClick={handleAddToCart}
+                      onClick={() => {
+                        if (isPreOrder) {
+                          setIsPreOrderModalOpen(true);
+                        } else {
+                          handleAddToCart();
+                        }
+                      }}
                       disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                       className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                     >
@@ -571,6 +629,14 @@ export default function ProductDetail({ params }) {
               </div >
             </div >
           </div >
+
+          <PreOrderModal
+            isOpen={isPreOrderModalOpen}
+            onClose={() => setIsPreOrderModalOpen(false)}
+            product={product}
+            variant={selectedVariant}
+            quantity={quantity}
+          />
 
           {/* Bottom Part */}
           < div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12" >

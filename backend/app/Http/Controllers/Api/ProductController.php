@@ -46,6 +46,12 @@ class ProductController extends Controller
             });
         }
 
+        if ($request->has('tag')) {
+            $query->whereHas('tags', function($q) use ($request) {
+                $q->where('slug', $request->tag);
+            });
+        }
+
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {

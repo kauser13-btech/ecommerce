@@ -31,8 +31,8 @@ export default function HeroSlider({ offers }) {
                 className="h-full w-full"
             >
                 {offers.map((offer) => {
-                    const href = offer.product ? `/products/${offer.product.slug}` : '#';
-                    const isLink = !!offer.product;
+                    const href = offer.url ? offer.url : (offer.product ? `/products/${offer.product.slug}` : '#');
+                    const isLink = !!offer.url || !!offer.product;
 
                     const SlideContent = (
                         <div className="block h-full w-full relative group overflow-hidden">

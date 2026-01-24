@@ -33,6 +33,7 @@ class OfferController extends Controller
             'title' => 'required|string|max:255',
             'image' => 'nullable', // Allow file or string
             'product_id' => 'nullable|exists:products,id',
+            'url' => 'nullable|string|max:500',
             'is_active' => 'boolean',
         ]);
 
@@ -57,6 +58,7 @@ class OfferController extends Controller
             'title' => 'sometimes|string|max:255',
             'image' => 'nullable', // Allow file, string or null
             'product_id' => 'nullable|exists:products,id',
+            'url' => 'nullable|string|max:500',
             'is_active' => 'boolean',
         ]);
 

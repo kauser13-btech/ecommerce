@@ -92,7 +92,6 @@ export default function TagsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tags</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage product tags</p>
                 </div>
             </div>
 

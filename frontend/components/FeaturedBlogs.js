@@ -12,9 +12,6 @@ export default function FeaturedBlogs({ blogs }) {
                 <div className="flex justify-between items-end mb-10">
                     <div>
                         <h2 className="text-3xl font-bold text-gray-900 mb-4">News & Insights</h2>
-                        <p className="text-gray-600 max-w-2xl">
-                            Stay updated with the latest trends, guides, and technical insights from our team.
-                        </p>
                     </div>
                     <Link
                         href="/blogs"
@@ -43,27 +40,12 @@ export default function FeaturedBlogs({ blogs }) {
                                         No Image
                                     </div>
                                 )}
-                                {/* Overlay gradient */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
-
-                                <div className="absolute bottom-4 left-4 text-white">
-                                    <div className="flex items-center gap-2 text-xs font-medium bg-orange-600/90 backdrop-blur-sm px-3 py-1 rounded-full w-fit mb-2">
-                                        <span>Featured</span>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="p-8">
                                 <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                                    <span className="flex items-center gap-1.5">
-                                        <Calendar size={14} />
-                                        {new Date(blog.created_at).toLocaleDateString()}
-                                    </span>
                                     {blog.tags && blog.tags.length > 0 && (
-                                        <>
-                                            <span>•</span>
-                                            <span className="text-orange-600 font-medium">{blog.tags[0]}</span>
-                                        </>
+                                        <span className="text-orange-600 font-medium">{blog.tags[0]}</span>
                                     )}
                                 </div>
 

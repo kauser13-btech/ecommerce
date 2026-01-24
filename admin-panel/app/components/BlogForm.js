@@ -71,11 +71,31 @@ export default function BlogForm({ initialData = null }) {
         setLoading(true);
 
         try {
+            let finalFormData = { ...formData };
+
+            // Handle Cover Image Upload if it's a file
+            if (formData.cover_image instanceof File) {
+                const imageFormData = new FormData();
+                imageFormData.append('image', formData.cover_image);
+
+                try {
+                    const uploadRes = await api.post('/media', imageFormData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    finalFormData.cover_image = uploadRes.data.url;
+                } catch (uploadError) {
+                    console.error('Image upload failed:', uploadError);
+                    toast.error('Failed to upload cover image');
+                    setLoading(false);
+                    return;
+                }
+            }
+
             if (initialData) {
-                await api.put(`/admin/blogs/${initialData.id}`, formData);
+                await api.put(`/admin/blogs/${initialData.id}`, finalFormData);
                 toast.success('Blog updated successfully');
             } else {
-                await api.post('/admin/blogs', formData);
+                await api.post('/admin/blogs', finalFormData);
                 toast.success('Blog created successfully');
             }
             router.push('/dashboard/blogs');

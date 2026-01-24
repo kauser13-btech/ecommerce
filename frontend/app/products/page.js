@@ -12,6 +12,7 @@ async function getProducts(searchParams) {
 
     if (searchParams.category) params.append('category', searchParams.category);
     if (searchParams.brand) params.append('brand', searchParams.brand);
+    if (searchParams.tag) params.append('tag', searchParams.tag);
     if (searchParams.search) params.append('search', searchParams.search);
     if (searchParams.min_price) params.append('min_price', searchParams.min_price);
     if (searchParams.max_price) params.append('max_price', searchParams.max_price);
@@ -61,10 +62,14 @@ async function getCategories() {
   }
 }
 
-async function getBrands() {
+async function getBrands(categorySlug) {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(`${apiUrl}/brands`, { cache: 'no-store' });
+    const url = new URL(`${apiUrl}/brands`);
+    if (categorySlug) {
+      url.searchParams.append('category', categorySlug);
+    }
+    const response = await fetch(url.toString(), { cache: 'no-store' });
 
     if (!response.ok) return [];
 
@@ -78,14 +83,20 @@ async function getBrands() {
 
 export default async function ProductsPage(props) {
   const searchParams = await props.searchParams;
+  const category = searchParams?.category || '';
+  const brand = searchParams?.brand || '';
+  const tag = searchParams?.tag || '';
+  const search = searchParams?.search || '';
+  const page = searchParams?.page || 1;
+
   const [{ data: products, meta }, categories, brands] = await Promise.all([
     getProducts(searchParams),
     getCategories(),
-    getBrands(),
+    getBrands(category),
   ]);
-  const category = searchParams?.category || '';
-  const brand = searchParams?.brand || '';
-  const search = searchParams?.search || '';
+  // const category = searchParams?.category || ''; // Removed
+  // const brand = searchParams?.brand || ''; // Removed
+  // const search = searchParams?.search || ''; // Removed
   const currentPage = meta?.current_page || 1;
 
   // Helper to generate pagination URL
@@ -114,6 +125,12 @@ export default async function ProductsPage(props) {
                     <span className="text-gray-900 capitalize">{category.replace('-', ' ')}</span>
                   </>
                 )}
+                {tag && (
+                  <>
+                    <span className="text-gray-300">/</span>
+                    <span className="text-gray-900 capitalize">Tag: {tag}</span>
+                  </>
+                )}
               </div>
               {brand ? (
                 (() => {
@@ -129,9 +146,44 @@ export default async function ProductsPage(props) {
               ) : (
                 <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">
                   {search ? `Search results for "${search}"` :
-                    category ? categories.find(c => c.slug === category)?.name || category.replace('-', ' ') :
-                      'All Products'}
+                    tag ? `Tagged: "${tag}"` :
+                      category ? categories.find(c => c.slug === category)?.name || category.replace('-', ' ') :
+                        'All Products'}
                 </h1>
+              )}
+
+              {/* Brands Filter List */}
+              {brands.length > 0 && !search && (
+                <div className="mt-8">
+                  <div className="flex flex-wrap gap-3">
+                    {brands.map(b => {
+                      const isActive = brand === b.slug;
+                      return (
+                        <Link
+                          key={b.id}
+                          href={
+                            isActive
+                              ? `/products?category=${category}` // Deselect: keep category, remove brand
+                              : `/products?category=${category}&brand=${b.slug}` // Select: keep category, add brand
+                          }
+                          className={`group flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 ${isActive
+                            ? 'bg-black border-black text-white shadow-md'
+                            : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-sm'
+                            }`}
+                        >
+                          {b.logo && (
+                            <img
+                              src={b.logo}
+                              alt={b.name}
+                              className={`w-5 h-5 object-contain ${isActive ? 'brightness-0 invert' : ''} group-hover:scale-110 transition-transform`}
+                            />
+                          )}
+                          <span className="text-sm font-medium">{b.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -143,7 +195,7 @@ export default async function ProductsPage(props) {
             <aside className="w-64 flex-shrink-0 hidden lg:block">
               <div className="sticky top-32 space-y-8">
                 {/* Categories */}
-                {/* <div>
+                <div>
                   <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">Categories</h3>
                   <div className="space-y-1">
                     <Link
@@ -155,7 +207,7 @@ export default async function ProductsPage(props) {
                     >
                       All Categories
                     </Link>
-                    {categories.map((cat) => (
+                    {categories.filter(c => !c.parent_id).map((cat) => (
                       <Link
                         key={cat.slug}
                         href={`/products?category=${cat.slug}`}
@@ -168,34 +220,6 @@ export default async function ProductsPage(props) {
                           {cat.icon && <span>{cat.icon}</span>}
                           {cat.name}
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div> */}
-
-                {/* Brands */}
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">Brands</h3>
-                  <div className="space-y-1">
-                    <Link
-                      href="/products"
-                      className={`block px-3 py-2 rounded-lg text-sm transition-all ${!brand
-                        ? 'bg-black text-white font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                    >
-                      All Brands
-                    </Link>
-                    {brands.map((brandItem) => (
-                      <Link
-                        key={brandItem.slug}
-                        href={`/products?brand=${brandItem.slug}`}
-                        className={`block px-3 py-2 rounded-lg text-sm transition-all ${brand === brandItem.slug
-                          ? 'bg-black text-white font-medium'
-                          : 'text-gray-600 hover:bg-gray-100'
-                          }`}
-                      >
-                        {brandItem.name}
                       </Link>
                     ))}
                   </div>

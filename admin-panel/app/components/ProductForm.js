@@ -1310,7 +1310,6 @@ export default function ProductForm({ initialData, isEdit }) {
                                     <th className="px-4 py-3">Original Price</th>
                                     <th className="px-4 py-3">Stock</th>
                                     <th className="px-4 py-3">Pre-order</th>
-                                    <th className="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1358,15 +1357,6 @@ export default function ProductForm({ initialData, isEdit }) {
                                                 onChange={(e) => handleVariantChange(index, 'is_preorder', e.target.checked)}
                                                 className="rounded text-blue-600 focus:ring-blue-500"
                                             />
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => removeVariant(index)}
-                                                className="text-red-500 hover:text-red-700"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
                                         </td>
                                     </tr>
                                 ))}

@@ -25,22 +25,22 @@ const FeatureCard = ({ iconSrc, iconAlt, title, description }) => {
 export default function FeaturesGrid() {
     const features = [
         {
-            iconSrc: "//digital-world-shop.myshopify.com/cdn/shop/files/payment.gif?v=1752584280&width=1200",
+            iconSrc: "gifs/payment.gif",
             iconAlt: "Safe Payment Icon",
             title: "36 Months Installments"
         },
         {
-            iconSrc: "//digital-world-shop.myshopify.com/cdn/shop/files/truck_1.gif?v=1752584523&width=1200",
+            iconSrc: "gifs/truck_1.gif",
             iconAlt: "Worldwide Delivery Icon",
             title: "Fastest Home Delivery"
         },
         {
-            iconSrc: "//digital-world-shop.myshopify.com/cdn/shop/files/helpdesk.gif?v=1752584612&width=1200",
+            iconSrc: "gifs/helpdesk.gif",
             iconAlt: "24/7 Help Center Icon",
             title: "After Sell Service"
         },
         {
-            iconSrc: "//digital-world-shop.myshopify.com/cdn/shop/files/discount.gif?v=1752584707&width=1200",
+            iconSrc: "gifs/discount.gif",
             iconAlt: "Daily Promotion Icon",
             title: "Best Price in Bangladesh"
         },

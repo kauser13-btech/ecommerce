@@ -149,13 +149,19 @@ export default function ProductCard({ product, isSkeleton = false }) {
         </h3>
 
         <div className="flex items-center gap-2">
-          <p className="text-gray-900 font-bold">
-            ৳ {isNaN(currentPrice) ? 'N/A' : currentPrice.toLocaleString()}
-          </p>
-          {isOnSale && (
-            <p className="text-gray-400 text-sm line-through decoration-gray-400/50">
-              ৳ {originalPrice.toLocaleString()}
-            </p>
+          {product.is_preorder ? (
+            <p className="text-gray-900 font-bold">TBD</p>
+          ) : (
+            <>
+              <p className="text-gray-900 font-bold">
+                ৳ {isNaN(currentPrice) ? 'N/A' : currentPrice.toLocaleString()}
+              </p>
+              {isOnSale && (
+                <p className="text-gray-400 text-sm line-through decoration-gray-400/50">
+                  ৳ {originalPrice.toLocaleString()}
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

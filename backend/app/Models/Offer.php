@@ -10,6 +10,7 @@ class Offer extends Model
         'title',
         'image',
         'product_id',
+        'url',
         'is_active',
         'sort_order',
     ];

@@ -12,9 +12,30 @@ export default function MenuManagement() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ title: '', url: '', parent_id: null });
 
+    const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [tags, setTags] = useState([]);
+    const [linkType, setLinkType] = useState('custom');
+
     useEffect(() => {
         fetchMenu();
+        fetchDependencies();
     }, []);
+
+    const fetchDependencies = async () => {
+        try {
+            const [catsRes, brandsRes, tagsRes] = await Promise.all([
+                api.get('/categories'),
+                api.get('/brands'),
+                api.get('/tags')
+            ]);
+            setCategories(catsRes.data.data || catsRes.data);
+            setBrands(brandsRes.data.data || brandsRes.data);
+            setTags(tagsRes.data.data || tagsRes.data);
+        } catch (error) {
+            console.error('Error fetching dependencies:', error);
+        }
+    };
 
     const fetchMenu = async () => {
         try {
@@ -29,6 +50,7 @@ export default function MenuManagement() {
     };
 
     const handleOpenModal = (parent_id = null, item = null) => {
+        setLinkType('custom'); // Reset helper
         if (item) {
             setEditingItem(item);
             setFormData({ title: item.title, url: item.url, parent_id: item.parent_id });
@@ -210,6 +232,49 @@ export default function MenuManagement() {
                             </button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Link Source</label>
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <select
+                                        value={linkType}
+                                        onChange={(e) => setLinkType(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/5 bg-white"
+                                    >
+                                        <option value="custom">Custom URL</option>
+                                        <option value="category">Category</option>
+                                        <option value="brand">Brand</option>
+                                        <option value="tag">Tag</option>
+                                    </select>
+
+                                    {linkType !== 'custom' && (
+                                        <select
+                                            onChange={(e) => {
+                                                const slug = e.target.value;
+                                                if (!slug) return;
+                                                const prefix = linkType === 'category' ? 'products?category=' : linkType === 'brand' ? '/products?brand=' : '/tag';
+
+                                                let item;
+                                                if (linkType === 'category') item = categories.find(i => i.slug === slug);
+                                                if (linkType === 'brand') item = brands.find(i => i.slug === slug);
+                                                if (linkType === 'tag') item = tags.find(i => i.slug === slug);
+
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    url: `${prefix}/${slug}`,
+                                                    title: prev.title || (item?.name || item?.title || '')
+                                                }));
+                                            }}
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/5 bg-white"
+                                        >
+                                            <option value="">Select Item...</option>
+                                            {linkType === 'category' && categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                                            {linkType === 'brand' && brands.map(b => <option key={b.id} value={b.slug}>{b.name}</option>)}
+                                            {linkType === 'tag' && tags.map(t => <option key={t.id} value={t.slug}>{t.name}</option>)}
+                                        </select>
+                                    )}
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                                 <input

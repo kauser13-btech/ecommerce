@@ -46,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/blogs', [\App\Http\Controllers\Api\BlogController::class, 'store']);
         Route::put('/blogs/{id}', [\App\Http\Controllers\Api\BlogController::class, 'update']);
         Route::delete('/blogs/{id}', [\App\Http\Controllers\Api\BlogController::class, 'destroy']);
+    
+        // Admin Pre-Orders
+        Route::get('/pre-orders', [\App\Http\Controllers\PreOrderController::class, 'index']);
     });
 });
 
@@ -108,5 +111,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/menu/{id}', [App\Http\Controllers\Api\MenuController::class, 'update']);
         Route::delete('/menu/{id}', [App\Http\Controllers\Api\MenuController::class, 'destroy']);
         Route::post('/menu/reorder', [App\Http\Controllers\Api\MenuController::class, 'reorder']);
+        Route::post('/menu/reorder', [App\Http\Controllers\Api\MenuController::class, 'reorder']);
     });
 });
+
+// Pre-Orders
+Route::post('/pre-orders', [\App\Http\Controllers\PreOrderController::class, 'store']);

@@ -12,11 +12,16 @@ export default function EditOfferPage({ params }) {
     const [id, setId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [tags, setTags] = useState([]);
     const [products, setProducts] = useState([]);
+    const [linkType, setLinkType] = useState('custom');
     const [formData, setFormData] = useState({
         title: '',
-        image: '', // Can be URL string or File object
+        image: '',
         product_id: '',
+        url: '',
         is_active: true,
     });
 
@@ -29,24 +34,48 @@ export default function EditOfferPage({ params }) {
 
     const fetchInitialData = async (offerId) => {
         try {
-            const [offerRes, productsRes] = await Promise.all([
+            const [offerRes, catsRes, brandsRes, tagsRes, productsRes] = await Promise.all([
                 api.get(`/offers/${offerId}`),
+                api.get('/categories'),
+                api.get('/brands'),
+                api.get('/tags'),
                 api.get('/products')
             ]);
 
+            // Safely handle response data
             const offer = offerRes.data.data || offerRes.data;
-            const productList = productsRes.data.data || productsRes.data;
+            const cats = catsRes.data.data || catsRes.data;
+            const brs = brandsRes.data.data || brandsRes.data;
+            const tgs = tagsRes.data.data || tagsRes.data;
+            const prods = productsRes.data.data || productsRes.data;
 
-            setProducts(productList);
+            setCategories(cats);
+            setBrands(brs);
+            setTags(tgs);
+            setProducts(prods);
+
             setFormData({
                 title: offer.title,
                 image: offer.image,
                 product_id: offer.product_id || '',
+                url: offer.url || '',
                 is_active: offer.is_active,
             });
+
+            // Determine Link Type
+            if (offer.product_id) {
+                setLinkType('product');
+            } else if (offer.url) {
+                if (offer.url.includes('category=')) setLinkType('category');
+                else if (offer.url.includes('brand=')) setLinkType('brand');
+                else if (offer.url.includes('tag=')) setLinkType('tag');
+                else setLinkType('custom');
+            } else {
+                setLinkType('custom');
+            }
+
         } catch (error) {
             console.error('Error fetching data:', error);
-            // toast.error is better but alert is in original code
             alert('Failed to load offer data');
             router.push('/dashboard/offers');
         } finally {
@@ -68,6 +97,7 @@ export default function EditOfferPage({ params }) {
             const data = new FormData();
             data.append('title', formData.title);
             data.append('product_id', formData.product_id);
+            data.append('url', formData.url || '');
             data.append('is_active', formData.is_active ? '1' : '0');
 
             if (formData.image instanceof File) {
@@ -154,20 +184,71 @@ export default function EditOfferPage({ params }) {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Linked Product
+                        Link Source
                     </label>
-                    <select
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <select
+                            value={linkType}
+                            onChange={(e) => setLinkType(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                            <option value="custom">Custom URL</option>
+                            <option value="product">Product</option>
+                            <option value="category">Category</option>
+                            <option value="brand">Brand</option>
+                            <option value="tag">Tag</option>
+                        </select>
+
+                        {linkType !== 'custom' && (
+                            <select
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (!value) return;
+
+                                    let url = '';
+                                    let productId = '';
+
+                                    if (linkType === 'product') {
+                                        const prod = products.find(p => p.id.toString() === value);
+                                        if (prod) {
+                                            url = `/products/${prod.slug}`;
+                                            productId = prod.id;
+                                        }
+                                    } else {
+                                        const slug = value;
+                                        const prefix = linkType === 'category' ? '/products?category=' : linkType === 'brand' ? '/products?brand=' : '/products?tag=';
+                                        url = `${prefix}${slug}`;
+                                    }
+
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        url,
+                                        product_id: productId
+                                    }));
+                                }}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            >
+                                <option value="">Select Item...</option>
+                                {linkType === 'product' && products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                {linkType === 'category' && categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                                {linkType === 'brand' && brands.map(b => <option key={b.id} value={b.slug}>{b.name}</option>)}
+                                {linkType === 'tag' && tags.map(t => <option key={t.id} value={t.slug}>{t.name}</option>)}
+                            </select>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        URL
+                    </label>
+                    <input
+                        type="text"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.product_id}
-                        onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                    >
-                        <option value="">No Product Linked</option>
-                        {products.map(p => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
+                        value={formData.url || ''}
+                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                        placeholder="e.g. /products/new-arrivals"
+                    />
                 </div>
 
                 <div className="flex items-center gap-2">

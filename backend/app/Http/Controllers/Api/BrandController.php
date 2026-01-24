@@ -16,6 +16,26 @@ class BrandController extends Controller
             $query->where('show_on_home', $request->boolean('show_on_home'));
         }
 
+        if ($request->has('category')) {
+            $categorySlug = $request->category;
+            $category = \App\Models\Category::where('slug', $categorySlug)->first();
+
+            if ($category) {
+                // Get ID of category and all its children to match ProductController filtering logic
+                // Assuming 1-level nesting or using same logic as ProductController
+                $ids = collect([$category->id])->merge($category->children()->pluck('id'));
+                
+                $query->whereHas('products', function($q) use ($ids) {
+                    $q->whereIn('category_id', $ids)
+                      ->where('is_active', true);
+                });
+            } else {
+               // Logic choice: if category invalid, return empty or all? 
+               // Consistent with ProductController: return empty/nothing found context
+               $query->where('id', -1); 
+            }
+        }
+
         $brands = $query->orderBy('sort_order', 'asc')->orderBy('name', 'asc')->get();
 
         return response()->json($brands);

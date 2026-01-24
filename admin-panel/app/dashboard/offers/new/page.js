@@ -10,30 +10,37 @@ import ImagePicker from '@/app/components/ImagePicker';
 export default function NewOfferPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [tags, setTags] = useState([]);
     const [products, setProducts] = useState([]);
+    const [linkType, setLinkType] = useState('custom');
     const [formData, setFormData] = useState({
         title: '',
         image: '',
         product_id: '',
+        url: '',
         is_active: true,
     });
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchResources = async () => {
             try {
-                // Fetch basic product list for selection
-                // Assuming /api/products returns paginated or full list. 
-                // For a proper dropdown we might need a search endpoint.
-                // Using /products for now.
-                const response = await api.get('/products');
-                // Adjust based on actual API response structure (pagination vs array)
-                const productList = response.data.data || response.data;
-                setProducts(productList);
+                const [catsRes, brandsRes, tagsRes, prodsRes] = await Promise.all([
+                    api.get('/categories'),
+                    api.get('/brands'),
+                    api.get('/tags'),
+                    api.get('/products')
+                ]);
+                setCategories(catsRes.data.data || catsRes.data);
+                setBrands(brandsRes.data.data || brandsRes.data);
+                setTags(tagsRes.data.data || tagsRes.data);
+                setProducts(prodsRes.data.data || prodsRes.data);
             } catch (error) {
-                console.error('Error fetching products:', error);
+                console.error('Error fetching resources:', error);
             }
         };
-        fetchProducts();
+        fetchResources();
     }, []);
 
     const handleSubmit = async (e) => {
@@ -90,21 +97,80 @@ export default function NewOfferPage() {
                 </div>
 
                 <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Link Source</label>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <select
+                            value={linkType}
+                            onChange={(e) => setLinkType(e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                            <option value="custom">Custom URL</option>
+                            <option value="product">Product</option>
+                            <option value="category">Category</option>
+                            <option value="brand">Brand</option>
+                            <option value="tag">Tag</option>
+                        </select>
+
+                        {linkType !== 'custom' && (
+                            <select
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (!value) return;
+
+                                    let url = '';
+                                    let productId = '';
+                                    let title = formData.title;
+
+                                    if (linkType === 'product') {
+                                        const prod = products.find(p => p.id.toString() === value);
+                                        if (prod) {
+                                            url = `/products/${prod.slug}`;
+                                            productId = prod.id;
+                                            if (!title) title = prod.name;
+                                        }
+                                    } else {
+                                        const slug = value;
+                                        const prefix = linkType === 'category' ? '/products?category=' : linkType === 'brand' ? '/products?brand=' : '/products?tag=';
+                                        url = `${prefix}${slug}`;
+
+                                        let item;
+                                        if (linkType === 'category') item = categories.find(i => i.slug === slug);
+                                        if (linkType === 'brand') item = brands.find(i => i.slug === slug);
+                                        if (linkType === 'tag') item = tags.find(i => i.slug === slug);
+
+                                        if (!title && item) title = item.name || item.title;
+                                    }
+
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        url,
+                                        product_id: productId, // Populate product_id only if product selected
+                                        title
+                                    }));
+                                }}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            >
+                                <option value="">Select Item...</option>
+                                {linkType === 'product' && products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                {linkType === 'category' && categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                                {linkType === 'brand' && brands.map(b => <option key={b.id} value={b.slug}>{b.name}</option>)}
+                                {linkType === 'tag' && tags.map(t => <option key={t.id} value={t.slug}>{t.name}</option>)}
+                            </select>
+                        )}
+                    </div>
+                </div>
+
+                <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Linked Product
+                        URL
                     </label>
-                    <select
+                    <input
+                        type="text"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.product_id}
-                        onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                    >
-                        <option value="">No Product Linked</option>
-                        {products.map(p => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
+                        value={formData.url || ''}
+                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                        placeholder="e.g. /products/new-arrivals"
+                    />
                 </div>
 
                 <div className="flex items-center gap-2">

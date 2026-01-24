@@ -52,16 +52,6 @@ export default function ProductGridWithToolbar({ products, meta }) {
                 <div className="flex items-center gap-4 sm:gap-6 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
                     {/* Grid Toggles */}
                     <div className="flex items-center gap-2 border-r border-gray-200 pr-4 sm:pr-6">
-                        {/* Show grid toggles on mobile too if space permits, or hide. User previous code hid them on lg. 
-                             Let's keep user preference or standard. The code was `hidden lg:flex`. 
-                             If user wants to change grid on mobile, we should show them. 
-                             Let's enable them for all screens but maybe smaller? 
-                             Actually user didn't ask to show grid on mobile, but "wrong place" might imply layout shifts.
-                             Let's keep grid toggles hidden on mobile if that was the case, 
-                             BUT the previous code had `hidden lg:flex` which means HIDDEN on mobile. 
-                             So mobile only sees "Sort by".
-                             If "Sort by" is the only thing, it should be aligned well.
-                          */}
                         <div className="hidden lg:flex items-center gap-2">
                             <button
                                 onClick={() => setGridSize(2)}

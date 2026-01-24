@@ -4,8 +4,8 @@ import Link from 'next/link';
 export default function PinnedOffer({ offer }) {
     if (!offer) return null;
 
-    const href = offer.product ? `/products/${offer.product.slug}` : '#';
-    const isLink = !!offer.product;
+    const href = offer.url ? offer.url : (offer.product ? `/products/${offer.product.slug}` : '#');
+    const isLink = !!offer.url || !!offer.product;
 
     const Content = (
         <div className="h-full min-h-[220px] lg:min-h-[280px] rounded-2xl overflow-hidden relative flex flex-col p-8 hover:shadow-xl transition-all duration-300 group">
@@ -15,7 +15,7 @@ export default function PinnedOffer({ offer }) {
                         src={offer.image}
                         alt={offer.title}
                         fill
-                        quality={100}
+                        quality={90}
                         className="object-cover transition-transform duration-500"
                     />
                 ) : (

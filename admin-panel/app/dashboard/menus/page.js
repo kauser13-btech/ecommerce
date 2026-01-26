@@ -251,7 +251,7 @@ export default function MenuManagement() {
                                             onChange={(e) => {
                                                 const slug = e.target.value;
                                                 if (!slug) return;
-                                                const prefix = linkType === 'category' ? 'products?category=' : linkType === 'brand' ? '/products?brand=' : '/tag';
+                                                const prefix = linkType === 'category' ? '/products?category=' : linkType === 'brand' ? '/products?brand=' : '/products?tag=';
 
                                                 let item;
                                                 if (linkType === 'category') item = categories.find(i => i.slug === slug);
@@ -260,7 +260,7 @@ export default function MenuManagement() {
 
                                                 setFormData(prev => ({
                                                     ...prev,
-                                                    url: `${prefix}/${slug}`,
+                                                    url: `${prefix}${slug}`,
                                                     title: prev.title || (item?.name || item?.title || '')
                                                 }));
                                             }}

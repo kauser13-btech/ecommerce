@@ -152,7 +152,7 @@ export default async function ProductsPage(props) {
               ) : (
                 <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">
                   {search ? `Search results for "${search}"` :
-                    tag ? `Tagged: #${tag}` :
+                    tag ? `#${tag}` :
                       category ? categories.find(c => c.slug === category)?.name || category.replace('-', ' ') :
                         'All Products'}
                 </h1>

@@ -88,6 +88,10 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
+        
+        // Promote subcategories to top-level
+        Category::where('parent_id', $id)->update(['parent_id' => null]);
+        
         $category->delete();
 
         return response()->json(['message' => 'Category deleted successfully']);

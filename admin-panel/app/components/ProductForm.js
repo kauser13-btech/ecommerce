@@ -24,6 +24,7 @@ export default function ProductForm({ initialData, isEdit }) {
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
     const [tags, setTags] = useState([]);
+    const [attributes, setAttributes] = useState([]);
     const [options, setOptions] = useState([]);
     const [errorModal, setErrorModal] = useState({ isOpen: false, errors: null });
     const [slugModalOpen, setSlugModalOpen] = useState(false);
@@ -31,6 +32,8 @@ export default function ProductForm({ initialData, isEdit }) {
     const [pendingSaveRedirect, setPendingSaveRedirect] = useState(null);
     const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
     const [tagSearch, setTagSearch] = useState('');
+    const [isAttributeModalOpen, setIsAttributeModalOpen] = useState(false);
+    const [newAttributeName, setNewAttributeName] = useState('');
 
     const [images, setImages] = useState([]); // Unified state: { type: 'existing'|'new', url: string, file?: File }
     const [specs, setSpecs] = useState([]);
@@ -130,14 +133,16 @@ export default function ProductForm({ initialData, isEdit }) {
 
     const fetchDependencies = async () => {
         try {
-            const [catsRes, brandsRes, tagsRes] = await Promise.all([
+            const [catsRes, brandsRes, tagsRes, attrsRes] = await Promise.all([
                 api.get('/categories'),
                 api.get('/brands'),
-                api.get('/tags')
+                api.get('/tags'),
+                api.get('/attributes')
             ]);
             setCategories(catsRes.data.data || catsRes.data);
             setBrands(brandsRes.data.data || brandsRes.data);
             setTags(tagsRes.data.data || tagsRes.data);
+            setAttributes(attrsRes.data.data || attrsRes.data);
         } catch (error) {
             console.error('Error fetching dependencies:', error);
         }
@@ -427,6 +432,11 @@ export default function ProductForm({ initialData, isEdit }) {
         if (field === 'values') {
             newOptions[index][field] = value.split(',').map(v => v.trim());
         } else if (field === 'name') {
+            if (value === '__create_new__') {
+                setIsAttributeModalOpen(true);
+                return; // Don't set the value to __create_new__
+            }
+
             // Validate that variation name is not "color" or "Colors" (case-insensitive)
             if (value.toLowerCase() === 'color' || value.toLowerCase() === 'colors') {
                 toast.error('The variation name "color" is reserved. Please use the "Product Colors" feature to manage product colors.');
@@ -1265,10 +1275,10 @@ export default function ProductForm({ initialData, isEdit }) {
                                     className="block w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select Type</option>
-                                    <option value="Storage">Storage</option>
-                                    <option value="Region">Region</option>
-                                    <option value="Sim">Sim</option>
-                                    <option value="Size">Size</option>
+                                    {attributes.map(attr => (
+                                        <option key={attr.id} value={attr.name}>{attr.name}</option>
+                                    ))}
+                                    <option value="__create_new__" className="text-blue-600 font-medium">+ Create New Type</option>
                                 </select>
                                 <input
                                     type="text"
@@ -1378,6 +1388,66 @@ export default function ProductForm({ initialData, isEdit }) {
                 onSaveAnyway={handleSaveAnyway}
                 slug={formData.slug}
             />
+
+            {/* Create Attribute Modal */}
+            {isAttributeModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 className="font-semibold text-gray-900">Add New Variation Type</h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsAttributeModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-500"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Type Name</label>
+                                <input
+                                    type="text"
+                                    value={newAttributeName}
+                                    onChange={(e) => setNewAttributeName(e.target.value)}
+                                    placeholder="e.g. Material"
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    autoFocus
+                                />
+                                <p className="text-xs text-gray-500 mt-1">This will be available for all products.</p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAttributeModalOpen(false)}
+                                    className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={!newAttributeName.trim()}
+                                    onClick={async () => {
+                                        try {
+                                            const res = await api.post('/attributes', { name: newAttributeName });
+                                            setAttributes([...attributes, res.data]);
+                                            setIsAttributeModalOpen(false);
+                                            setNewAttributeName('');
+                                            toast.success('Variation type added');
+                                        } catch (err) {
+                                            console.error(err);
+                                            toast.error('Failed to add type. It might already exist.');
+                                        }
+                                    }}
+                                    className="px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Create Type
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </form >
     );
 }

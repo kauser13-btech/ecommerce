@@ -86,6 +86,9 @@ Route::delete('/brands/{id}', [BrandController::class, 'destroy']);
 // Tags
 Route::apiResource('tags', TagController::class);
 
+// Attributes
+Route::apiResource('attributes', \App\Http\Controllers\AttributeController::class);
+
 // Media
 Route::get('/media', [App\Http\Controllers\Api\MediaController::class, 'index']);
 Route::post('/media', [App\Http\Controllers\Api\MediaController::class, 'store']);

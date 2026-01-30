@@ -105,7 +105,8 @@ class ProductController extends Controller
              $query->latest();
         }
 
-        $products = $query->paginate(24); // Increased from 20 to 24 for better grid alignment (divisible by 2, 3, 4)
+        $limit = $request->input('limit', 24);
+        $products = $query->paginate($limit);
 
         return response()->json($products);
     }

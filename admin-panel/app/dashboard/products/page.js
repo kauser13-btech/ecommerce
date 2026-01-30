@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '../../lib/api';
-import { Plus, Pencil, Trash2, Search, Loader2, Check, X, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Loader2, Check, X, Star, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSearchParams } from 'next/navigation';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
@@ -15,6 +15,7 @@ export default function ProductsPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [showInactive, setShowInactive] = useState(true);
 
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -27,7 +28,7 @@ export default function ProductsPage() {
 
     const fetchProducts = async () => {
         try {
-            const response = await api.get('/products?include_inactive=true');
+            const response = await api.get('/products?include_inactive=true&limit=1000');
             setProducts(response.data.data || response.data);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -108,7 +109,8 @@ export default function ProductsPage() {
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
         const matchesFeatured = showFeaturedOnly ? product.is_featured === 1 || product.is_featured === true : true;
-        return matchesSearch && matchesFeatured;
+        const matchesInactive = showInactive ? true : product.is_active;
+        return matchesSearch && matchesFeatured && matchesInactive;
     });
 
     if (loading) {
@@ -137,6 +139,7 @@ export default function ProductsPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">
                         {showFeaturedOnly ? 'Featured Products' : 'Products'}
+                        <span className="ml-2 text-sm font-normal text-gray-500">({filteredProducts.length})</span>
                     </h1>
                     {showFeaturedOnly && (
                         <p className="text-sm text-gray-500 mt-1">Showing only featured items</p>
@@ -152,8 +155,8 @@ export default function ProductsPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-200">
-                    <div className="relative max-w-sm">
+                <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="relative max-w-sm w-full">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="h-4 w-4 text-gray-400" />
                         </div>
@@ -165,6 +168,17 @@ export default function ProductsPage() {
                             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
+
+                    <button
+                        onClick={() => setShowInactive(!showInactive)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${showInactive
+                                ? 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                            }`}
+                    >
+                        {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                        {showInactive ? 'Showing Inactive' : 'Hidden Inactive'}
+                    </button>
                 </div>
 
                 <div className="overflow-x-auto">

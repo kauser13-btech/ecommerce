@@ -9,13 +9,12 @@ import FeaturesGrid from '@/components/FeaturesGrid';
 import FeaturedBlogs from '@/components/FeaturedBlogs';
 
 
-// Fetch data on server-side
-export const dynamic = 'force-dynamic';
+// Cache indefinitely until revalidated by tag from backend
 
 async function getOffers() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/offers?active_only=true`, {
-      cache: 'no-store'
+      next: { tags: ['offers'] }
     });
     const offers = await response.json();
     return offers;
@@ -28,7 +27,7 @@ async function getOffers() {
 async function getNewArrivals() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/new-arrivals`, {
-      cache: 'no-store'
+      next: { tags: ['products', 'new-arrivals'] }
     });
     return await response.json();
   } catch (error) {
@@ -40,7 +39,7 @@ async function getNewArrivals() {
 async function getFeaturedProducts() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {
-      cache: 'no-store'
+      next: { tags: ['products', 'featured-products'] }
     });
     return await response.json();
   } catch (error) {
@@ -52,7 +51,7 @@ async function getFeaturedProducts() {
 async function getFeaturedBlogs() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/blogs/featured`, {
-      cache: 'no-store'
+      next: { tags: ['blogs', 'featured-blogs'] }
     });
     return await response.json();
   } catch (error) {

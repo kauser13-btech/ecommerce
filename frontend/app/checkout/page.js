@@ -376,8 +376,8 @@ export default function CheckoutPage() {
                         </div>
 
                         {/* Right Column - Summary */}
-                        <div className="lg:pl-12">
-                            <div className="bg-white shadow-lg rounded-3xl p-8 sticky top-32">
+                        <div className="lg:pl-12 sticky top-32">
+                            <div className="bg-white shadow-lg rounded-3xl p-8">
                                 <h2 className="tex-xl font-bold text-gray-900 mb-6 flex items-center justify-between">
                                     <span>Order Summary</span>
                                     <span className="text-gray-500 font-normal text-sm">{cartItems.length} items</span>

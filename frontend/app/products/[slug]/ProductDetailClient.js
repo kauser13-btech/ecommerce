@@ -264,7 +264,7 @@ export default function ProductDetailClient({ product, relatedProducts }) {
               </>
             )}
 
-            <span className="text-gray-900 font-medium truncate">{product.name}</span>
+            <span className="text-gray-900 font-medium truncate"> {product.name}</span>
           </nav>
 
           {/* Main Product */}
@@ -322,8 +322,7 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                     )}
                     <span>{product.brand?.name}</span>
                   </div>
-                  <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
-                  <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
+                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-900">{product.name}</h1>
 
                   {product.tags && product.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -392,9 +391,6 @@ export default function ProductDetailClient({ product, relatedProducts }) {
 
                       return (
                         <div>
-                          <h3 className="font-bold text-gray-900 mb-3">
-                            Color: <span className="font-normal text-gray-600">{activeColorName || 'Select a color'}</span>
-                          </h3>
                           <div className="flex flex-wrap gap-3">
                             {productColors.map((color, idx) => {
                               const isSelected = selectedOptions[colorOptionKey] === color.name;
@@ -506,22 +502,7 @@ export default function ProductDetailClient({ product, relatedProducts }) {
 
                 {/* Actions */}
                 <div className="pt-6 border-t border-gray-100">
-                  <h3 className="font-bold text-gray-900 mb-4">Select Quantity</h3>
                   <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center bg-white border border-gray-200 rounded-full px-2">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
-                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      >-</button>
-                      <span className="w-8 text-center font-semibold">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
-                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      >+</button>
-                    </div>
-
                     <button
                       onClick={() => {
                         if (isPreOrder) {
@@ -568,111 +549,99 @@ export default function ProductDetailClient({ product, relatedProducts }) {
           {/* Bottom Part */}
           < div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12" >
             {/* Details Section */}
-            < div className="lg:col-span-3 min-w-0" >
-              <div className="bg-white rounded-3xl shadow-sm p-8">
-                {(() => {
-                  const tabs = [
-                    { id: 'description', label: 'Details', content: product.description },
-                    { id: 'specifications', label: 'Specifications', content: product.specifications },
-                    { id: 'features', label: 'Features', content: product.features },
-                  ].filter(tab => tab.content);
+            < div className="lg:col-span-3  min-w-0" >
 
-                  if (tabs.length === 0) return null;
+              {(() => {
+                const tabs = [
+                  { id: 'description', label: 'Details', content: product.description },
+                  { id: 'specifications', label: 'Specifications', content: product.specifications },
+                  { id: 'features', label: 'Features', content: product.features },
+                ].filter(tab => tab.content);
 
-                  const currentTab = tabs.find(t => t.id === activeTab) ? activeTab : tabs[0].id;
+                if (tabs.length === 0) return null;
 
-                  return (
-                    <div>
-                      <div className="flex flex-wrap gap-8 border-b border-gray-100 mb-8">
-                        {tabs.map((tab) => (
-                          <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`pb-4 text-lg font-bold border-b-2 transition-colors relative ${currentTab === tab.id
-                              ? 'text-orange-500 border-orange-500'
-                              : 'text-gray-400 border-transparent hover:text-gray-600'
-                              }`}
-                          >
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
+                const currentTab = tabs.find(t => t.id === activeTab) ? activeTab : tabs[0].id;
 
-                      <div className="prose prose-stone max-w-none">
-                        {(() => {
-                          const tab = tabs.find(t => t.id === currentTab);
-                          if (!tab) return null;
+                return (
+                  <div>
+                    <div className="flex px-4 flex-wrap gap-8 border-b border-gray-100 mb-8">
+                      {tabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`pb-2 text-base font-semibold border-b-2 transition-colors relative ${currentTab === tab.id
+                            ? 'text-orange-500 border-orange-500'
+                            : 'text-gray-400 border-transparent hover:text-gray-600'
+                            }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
 
-                          if (tab.id === 'specifications') {
-                            try {
-                              const specs = typeof tab.content === 'string' ? JSON.parse(tab.content) : tab.content;
+                    <div className="prose prose-stone max-w-none">
+                      {(() => {
+                        const tab = tabs.find(t => t.id === currentTab);
+                        if (!tab) return null;
 
-                              if (typeof specs === 'object' && specs !== null && !Array.isArray(specs)) {
-                                return (
-                                  <div className="border border-gray-200 rounded-xl overflow-hidden">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                      <tbody className="divide-y divide-gray-200 bg-white">
-                                        {Object.entries(specs).map(([key, value], idx) => (
-                                          <tr key={key} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                        if (tab.id === 'specifications') {
+                          try {
+                            const specs = typeof tab.content === 'string' ? JSON.parse(tab.content) : tab.content;
+
+                            if (typeof specs === 'object' && specs !== null && !Array.isArray(specs)) {
+                              return (
+                                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                  <table className="min-w-full divide-y divide-gray-200">
+                                    <tbody className="divide-y divide-gray-200 bg-white">
+                                      {Object.entries(specs).map(([key, value], idx) => (
+                                        <tr key={key} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                                          <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
+                                          <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            }
+                            if (Array.isArray(specs)) {
+                              return (
+                                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                                  <table className="min-w-full divide-y divide-gray-200">
+                                    <tbody className="divide-y divide-gray-200 bg-white">
+                                      {specs.map((item, idx) => {
+                                        const key = item.name || item.key || item.label || Object.keys(item)[0];
+                                        const value = item.value || item.content || Object.values(item)[0];
+                                        return (
+                                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
                                             <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                );
-                              }
-                              if (Array.isArray(specs)) {
-                                return (
-                                  <div className="border border-gray-200 rounded-xl overflow-hidden">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                      <tbody className="divide-y divide-gray-200 bg-white">
-                                        {specs.map((item, idx) => {
-                                          const key = item.name || item.key || item.label || Object.keys(item)[0];
-                                          const value = item.value || item.content || Object.values(item)[0];
-                                          return (
-                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                                              <td className="px-6 py-4 text-sm font-semibold text-gray-900 w-1/3">{key}</td>
-                                              <td className="px-6 py-4 text-sm text-gray-600">{value}</td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                );
-                              }
-                            } catch (e) {
-                              console.log('Failed to parse specifications JSON', e);
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
                             }
+                          } catch (e) {
+                            console.log('Failed to parse specifications JSON', e);
                           }
+                        }
 
-                          const proseClasses = `
-                            prose prose-stone max-w-none
-                            prose-p:my-2
-                            prose-headings:font-bold
-                            prose-a:text-blue-600 hover:prose-a:text-blue-500
-                            prose-ul:list-disc prose-ul:pl-5
-                            prose-ol:list-decimal prose-ol:pl-5
-                            prose-li:marker:text-orange-500
-                            prose-li:my-1
-                            [&_.ql-ui]:hidden
-                            [&_ol>li[data-list='bullet']]:list-disc
-                            [&_ol>li[data-list='bullet']]:marker:text-orange-500
-                          `;
-
-                          if (tab.id === 'features') {
-                            return <div className={proseClasses} dangerouslySetInnerHTML={{ __html: tab.content }} />;
-                          }
-
-                          return <div className={proseClasses} dangerouslySetInnerHTML={{ __html: tab.content }} />;
-                        })()}
-                      </div>
+                        return (
+                          <div className="border p-4 border-gray-200 rounded-xl overflow-hidden">
+                            <div
+                              className="content-container"
+                              dangerouslySetInnerHTML={{ __html: tab.content }} />
+                          </div>
+                        );
+                      })()}
                     </div>
-                  );
-                })()}
-              </div>
+                  </div>
+                );
+              })()}
+
             </div >
 
             <div className="lg:col-span-1 min-w-0">

@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductGridWithToolbar from '@/components/ProductGridWithToolbar';
 
-export const dynamic = 'force-dynamic';
+// Cache indefinitely until revalidated by tag from backend
 
 async function getProducts(searchParams) {
   try {
@@ -22,7 +22,7 @@ async function getProducts(searchParams) {
     const url = `${apiUrl}/products${params.toString() ? '?' + params.toString() : ''}`;
     console.log('Fetching products from:', url);
 
-    const response = await fetch(url, { cache: 'no-store' });
+    const response = await fetch(url, { next: { tags: ['products'] } });
 
     if (!response.ok) {
       console.error('Failed to fetch products:', response.status);
@@ -50,7 +50,7 @@ async function getProducts(searchParams) {
 async function getCategories() {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(`${apiUrl}/categories`, { cache: 'no-store' });
+    const response = await fetch(`${apiUrl}/categories`, { next: { tags: ['categories'] } });
 
     if (!response.ok) return [];
 
@@ -72,7 +72,7 @@ async function getBrands(searchParams) {
     if (searchParams?.tag) {
       url.searchParams.append('tag', searchParams.tag);
     }
-    const response = await fetch(url.toString(), { cache: 'no-store' });
+    const response = await fetch(url.toString(), { next: { tags: ['brands'] } });
 
     if (!response.ok) return [];
 

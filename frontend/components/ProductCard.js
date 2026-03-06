@@ -62,9 +62,9 @@ export default function ProductCard({ product, isSkeleton = false }) {
       if (Array.isArray(colors) && colors.length > 0) {
         return (
           <div className="flex flex-wrap gap-1 md:gap-1.5 absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-20" onClick={(e) => e.preventDefault()}>
-            {colors.slice(0, 4).map((color) => (
+            {colors.slice(0, 4).map((color, idx) => (
               <div
-                key={color.code || color.name} // Use a unique identifier for the key
+                key={`${color.code || color.name}-${idx}`} // Fix duplicate key error
                 className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-gray-200/60 overflow-hidden relative cursor-pointer hover:scale-110 transition-transform hover:border-gray-400 shadow-sm"
                 title={color.name}
                 onMouseEnter={() => {

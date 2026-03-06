@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'nextjs' => [
+        'url' => env('NEXTJS_URL', 'http://localhost:3000'),
+        'revalidate_token' => env('NEXTJS_REVALIDATE_TOKEN'),
+    ],
+
 ];

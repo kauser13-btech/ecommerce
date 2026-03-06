@@ -268,12 +268,12 @@ export default function ProductDetailClient({ product, relatedProducts }) {
           </nav>
 
           {/* Main Product */}
-          <div className="bg-white rounded-3xl shadow-sm p-8 mb-12">
-            <div className="grid lg:grid-cols-2 gap-12">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm p-4 sm:p-6 lg:p-8 mb-12">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
               {/* Left Column - Images */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6 min-w-0">
                 <div
-                  className="aspect-[1] bg-white rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden cursor-zoom-in group"
+                  className="aspect-[1] bg-white rounded-xl sm:rounded-2xl border border-gray-100 flex items-center justify-center relative overflow-hidden cursor-zoom-in group"
                   onClick={() => setIsLightboxOpen(true)}
                   onMouseMove={handleMouseMove}
                   onMouseLeave={handleMouseLeave}
@@ -297,12 +297,12 @@ export default function ProductDetailClient({ product, relatedProducts }) {
 
                 {/* MAIN IMAGE SLIDER (PASSIVE) */}
                 {images.length > 1 && (
-                  <div className="flex gap-4 overflow-x-auto pb-2">
+                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide">
                     {images.map((img, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSelectedImage(idx)}
-                        className={`w-20 h-20 flex-shrink-0 bg-white overflow-hidden rounded-xl border-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
+                        className={`w-16 h-16 sm:w-20 sm:h-20 snap-start flex-shrink-0 bg-white overflow-hidden rounded-lg sm:rounded-xl border-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
                           } transition-colors`}
                       >
                         <img src={img} alt="" className="w-full h-full object-cover" />
@@ -313,9 +313,9 @@ export default function ProductDetailClient({ product, relatedProducts }) {
               </div>
 
               {/* Right Column - Details */}
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8 min-w-0">
                 {/* Header */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-center gap-2 text-gray-800 font-medium">
                     {product.brand?.logo && (
                       <img src={product.brand.logo} alt={product.brand.name} className="w-6 h-6 object-contain" />

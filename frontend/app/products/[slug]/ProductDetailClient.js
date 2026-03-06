@@ -387,14 +387,12 @@ export default function ProductDetailClient({ product, relatedProducts }) {
 
                     if (!hasColorOption && Array.isArray(productColors) && productColors.length > 0) {
                       const colorOptionKey = parsedOptions.find(o => o.name.toLowerCase() === 'color')?.name || 'Color';
-                      const activeColorName = selectedOptions[colorOptionKey];
 
                       return (
                         <div>
                           <div className="flex flex-wrap gap-3">
                             {productColors.map((color, idx) => {
                               const isSelected = selectedOptions[colorOptionKey] === color.name;
-
                               return (
                                 <button
                                   key={idx}
@@ -448,11 +446,11 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                     })();
 
                     return (
-                      <div key={idx}>
-                        <h3 className="font-bold text-gray-900 mb-3">
-                          {option.name}: <span className="font-normal text-gray-600">{selectedOptions[option.name]}</span>
-                        </h3>
-                        <div className="flex flex-wrap gap-3">
+                      <div key={idx} className="flex items-center gap-4 pt-1">
+                        <span className="text-sm font-semibold text-gray-700 min-w-[50px]">
+                          {option.name}
+                        </span>
+                        <div className="flex flex-wrap gap-2">
                           {option.values.map((val) => {
                             let hexCode = null;
                             if (isColorOption && Array.isArray(productColors)) {
@@ -467,15 +465,15 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                                 <button
                                   key={val}
                                   onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
-                                  className={`w-10 h-10 rounded-full border-2 transition-all relative flex items-center justify-center ${isSelected
-                                    ? 'border-orange-500 scale-110 shadow-sm'
-                                    : 'border-transparent hover:scale-110 ring-1 ring-gray-200'
+                                  className={`w-8 h-8 rounded-full border transition-all relative flex items-center justify-center ${isSelected
+                                    ? 'border-orange-500 scale-110 shadow-sm ring-2 ring-orange-500/20'
+                                    : 'border-gray-200 hover:scale-105 hover:border-gray-300'
                                     }`}
                                   title={val}
                                   style={{ backgroundColor: hexCode }}
                                 >
                                   {isSelected && (
-                                    <div className={`w-2 h-2 rounded-full ${['#ffffff', '#fff', 'white'].includes(hexCode.toLowerCase()) ? 'bg-gray-400' : 'bg-white'}`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full ${['#ffffff', '#fff', 'white'].includes(hexCode.toLowerCase()) ? 'bg-gray-400' : 'bg-white'}`} />
                                   )}
                                 </button>
                               );
@@ -485,9 +483,9 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                               <button
                                 key={val}
                                 onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
-                                className={`px-4 py-2 rounded-xl border transition-all ${isSelected
-                                  ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-500'
-                                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${isSelected
+                                  ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium'
+                                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                                   }`}
                               >
                                 {val}
@@ -518,19 +516,15 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                     </button>
 
-                    <button
-                      onClick={() => {
-                        if (isPreOrder) {
-                          setIsPreOrderModalOpen(true);
-                        } else {
-                          handleAddToCart();
-                        }
-                      }}
-                      disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                    >
-                      {isPreOrder ? 'Pre-Order' : 'Add to Cart'}
-                    </button>
+                    {!isPreOrder && (
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+                      >
+                        Add to Cart
+                      </button>
+                    )}
                   </div>
                 </div>
 

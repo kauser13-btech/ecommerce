@@ -1,4 +1,9 @@
-// app/components/FeaturesGrid.jsx
+'use client';
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
 
 const FeatureCard = ({ iconSrc, iconAlt, title, description }) => {
     return (
@@ -47,16 +52,44 @@ export default function FeaturesGrid() {
     ];
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            {features.map((feature, index) => (
-                <FeatureCard
-                    key={index}
-                    iconSrc={feature.iconSrc}
-                    iconAlt={feature.iconAlt}
-                    title={feature.title}
-                    description={feature.description}
-                />
-            ))}
+        <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-4 gap-4 md:gap-8">
+                {features.map((feature, index) => (
+                    <FeatureCard
+                        key={index}
+                        iconSrc={feature.iconSrc}
+                        iconAlt={feature.iconAlt}
+                        title={feature.title}
+                        description={feature.description}
+                    />
+                ))}
+            </div>
+
+            {/* Mobile Slider */}
+            <div className="md:hidden">
+                <Swiper
+                    modules={[Autoplay, Pagination]}
+                    spaceBetween={16}
+                    slidesPerView={1.2}
+                    loop={true}
+                    speed={800}
+                    autoplay={{ delay: 2000, disableOnInteraction: false }}
+                    pagination={{ clickable: true, dynamicBullets: true }}
+                    className="pb-10"
+                >
+                    {features.map((feature, index) => (
+                        <SwiperSlide key={index} className="h-auto">
+                            <FeatureCard
+                                iconSrc={feature.iconSrc}
+                                iconAlt={feature.iconAlt}
+                                title={feature.title}
+                                description={feature.description}
+                            />
+                        </SwiperSlide>
+                    ))}
+                </Swiper>
+            </div>
         </div>
     );
 }

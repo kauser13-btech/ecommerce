@@ -326,25 +326,25 @@ export default function ProductDetail({ params }) {
     <>
       <Header />
 
-      <main className="min-h-screen bg-gray-50 pt-40 pb-12">
-        <div className="max-w-7xl mx-auto px-4">
+      <main className="min-h-screen bg-gray-50 pt-28 sm:pt-32 lg:pt-40 pb-8 sm:pb-12">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
-            <Link href="/" className="hover:text-orange-500 transition-colors flex items-center gap-1">
-              <Home size={16} />
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-[13px] sm:text-sm text-gray-500 mb-6 sm:mb-8 overflow-x-auto whitespace-nowrap pb-2 no-scrollbar">
+            <Link href="/" className="hover:text-orange-500 transition-colors flex items-center gap-1 shrink-0">
+              <Home size={14} className="sm:w-4 sm:h-4" />
               <span>Home</span>
             </Link>
-            <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+            <ChevronRight size={14} className="text-gray-400 shrink-0 sm:w-4 sm:h-4" />
 
             {product.category && (
               <>
                 <Link
                   href={`/products?category=${product.category.slug}`}
-                  className="hover:text-orange-500 transition-colors"
+                  className="hover:text-orange-500 transition-colors shrink-0"
                 >
                   {product.category.name}
                 </Link>
-                <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+                <ChevronRight size={14} className="text-gray-400 shrink-0 sm:w-4 sm:h-4" />
               </>
             )}
 
@@ -352,8 +352,8 @@ export default function ProductDetail({ params }) {
           </nav>
 
           {/* Main Product */}
-          <div className="bg-white rounded-3xl shadow-sm p-8 mb-12">
-            <div className="grid lg:grid-cols-2 gap-12">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm p-4 sm:p-6 lg:p-8 mb-8 sm:mb-12 border border-gray-100/50">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               {/* Left Column - Images */}
               <div className="space-y-6">
                 <div
@@ -381,13 +381,13 @@ export default function ProductDetail({ params }) {
 
                 {/* MAIN IMAGE SLIDER (PASSIVE) */}
                 {images.length > 1 && (
-                  <div className="flex gap-4 overflow-x-auto pb-2">
+                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
                     {images.map((img, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSelectedImage(idx)}
-                        className={`w-20 h-20 flex-shrink-0 bg-white overflow-hidden rounded-xl border-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
-                          } transition-colors`}
+                        className={`w-16 h-16 sm:w-20 sm:h-20 shrink-0 snap-start bg-white overflow-hidden rounded-xl border-2 ${selectedImage === idx ? 'border-orange-500' : 'border-gray-100 hover:border-gray-300'
+                          } transition-all duration-200`}
                       >
                         <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
@@ -397,25 +397,25 @@ export default function ProductDetail({ params }) {
               </div>
 
               {/* Right Column - Details */}
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* Header */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-gray-800 font-medium">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-2 text-gray-800 font-medium text-sm sm:text-base">
                     {product.brand?.logo && (
-                      <img src={product.brand.logo} alt={product.brand.name} className="w-6 h-6 object-contain" />
+                      <img src={product.brand.logo} alt={product.brand.name} className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
                     )}
                     <span>{product.brand?.name}</span>
+                    <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
                   </div>
-                  <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
-                  <div className="text-gray-500 text-xs ml-auto">Code: <span className="text-gray-900 font-medium">{selectedVariant ? selectedVariant.sku : (product.sku || 'N/A')}</span></div>
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">{product.name}</h1>
 
                   {product.tags && product.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {product.tags.map(tag => (
                         <Link
                           key={tag.id}
                           href={`/products?tag=${tag.slug}`}
-                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md hover:bg-gray-200 transition-colors"
+                          className="text-[11px] sm:text-xs bg-gray-100 text-gray-600 px-2 py-1 flex items-center rounded-md hover:bg-gray-200 transition-colors"
                         >
                           #{tag.name}
                         </Link>
@@ -423,33 +423,33 @@ export default function ProductDetail({ params }) {
                     </div>
                   )}
 
-                  <div className="flex items-center flex-wrap gap-2">
+                  <div className="flex items-baseline flex-wrap gap-2 sm:gap-3 pt-2">
                     {isPreOrder ? (
-                      <span className="text-3xl font-bold text-gray-900">TBD</span>
+                      <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">TBD</span>
                     ) : (
                       <>
-                        <span className="text-3xl font-bold text-gray-900">
+                        <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
                           ৳ {currentPrice.toLocaleString()}
                         </span>
                         {discountPercent > 0 && (
-                          <span className="bg-[#ccfccb] text-[#0f5132] px-3 py-1 rounded-full text-sm font-bold">
+                          <span className="bg-[#ccfccb] text-[#0f5132] px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-sm font-bold self-center">
                             {discountPercent}% off
                           </span>
                         )}
                         {currentOriginalPrice > currentPrice && (
-                          <span className="text-gray-400 line-through text-lg">৳{currentOriginalPrice.toLocaleString()}</span>
+                          <span className="text-gray-400 line-through text-base sm:text-lg font-medium">৳{currentOriginalPrice.toLocaleString()}</span>
                         )}
                       </>
                     )}
 
                     {isPreOrder && (
-                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-bold border border-purple-200">
+                      <span className="bg-purple-100 text-purple-700 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-sm font-bold border border-purple-200 self-center">
                         Pre-Order
                       </span>
                     )}
 
                     {!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0 && (
-                      <span className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-bold">Out of Stock</span>
+                      <span className="bg-red-500 text-white px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-sm font-bold self-center">Out of Stock</span>
                     )}
                   </div>
                 </div>
@@ -589,51 +589,55 @@ export default function ProductDetail({ params }) {
                 </div>
 
                 {/* Actions */}
-                <div className="pt-6 border-t border-gray-100">
-                  <h3 className="font-bold text-gray-900 mb-4">Select Quantity</h3>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center bg-white border border-gray-200 rounded-full px-2">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
-                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      >-</button>
-                      <span className="w-8 text-center font-semibold">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-black font-bold text-lg disabled:opacity-50"
-                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      >+</button>
+                <div className="pt-6 sm:pt-8 border-t border-gray-100">
+                  <div className="flex flex-col gap-4 sm:gap-5">
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">Quantity</h3>
+                      <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+                        <button
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-full hover:text-black font-bold text-lg transition-colors disabled:opacity-50"
+                          disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        >-</button>
+                        <span className="w-10 sm:w-12 text-center font-bold text-gray-900">{quantity}</span>
+                        <button
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-full hover:text-black font-bold text-lg transition-colors disabled:opacity-50"
+                          disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        >+</button>
+                      </div>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        if (isPreOrder) {
-                          setIsPreOrderModalOpen(true);
-                        } else {
-                          handleBuyNow();
-                        }
-                      }}
-                      disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
-                    >
-                      {isPreOrder ? 'Pre-Order Now' : ((selectedVariant ? selectedVariant.stock : product.stock) <= 0 ? 'Out of Stock' : 'Buy Now')}
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-2">
+                      <button
+                        onClick={() => {
+                          if (isPreOrder) {
+                            setIsPreOrderModalOpen(true);
+                          } else {
+                            handleBuyNow();
+                          }
+                        }}
+                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        className="flex-1 w-full bg-linear-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 sm:py-4 px-6 sm:px-8 rounded-full shadow-[0_8px_20px_rgb(249,115,22,0.25)] hover:shadow-[0_8px_25px_rgb(249,115,22,0.35)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none text-[15px] sm:text-base"
+                      >
+                        {isPreOrder ? 'Pre-Order Now' : ((selectedVariant ? selectedVariant.stock : product.stock) <= 0 ? 'Out of Stock' : 'Buy Now')}
+                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        if (isPreOrder) {
-                          setIsPreOrderModalOpen(true);
-                        } else {
-                          handleAddToCart();
-                        }
-                      }}
-                      disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
-                      className="px-8 py-3 rounded-full border border-gray-200 text-gray-800 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-                    >
-                      {isPreOrder ? 'Pre-Order' : 'Add to Cart'}
-                    </button>
+                      <button
+                        onClick={() => {
+                          if (isPreOrder) {
+                            setIsPreOrderModalOpen(true);
+                          } else {
+                            handleAddToCart();
+                          }
+                        }}
+                        disabled={!isPreOrder && (selectedVariant ? selectedVariant.stock : product.stock) <= 0}
+                        className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-full border-2 border-gray-200 text-gray-800 font-bold hover:border-gray-900 hover:bg-gray-900 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-800 disabled:hover:border-gray-200 text-[15px] sm:text-base"
+                      >
+                        {isPreOrder ? 'Pre-Order' : 'Add to Cart'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -650,10 +654,10 @@ export default function ProductDetail({ params }) {
           />
 
           {/* Bottom Part */}
-          < div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12" >
+          < div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12" >
             {/* Details Section */}
             < div className="lg:col-span-3 min-w-0" >
-              <div className="bg-white rounded-3xl shadow-sm p-8">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm p-5 sm:p-8 border border-gray-100/50">
                 {(() => {
                   const tabs = [
                     { id: 'description', label: 'Details', content: product.description },
@@ -667,12 +671,12 @@ export default function ProductDetail({ params }) {
 
                   return (
                     <div>
-                      <div className="flex flex-wrap gap-8 border-b border-gray-100 mb-8">
+                      <div className="flex flex-wrap gap-5 sm:gap-8 border-b border-gray-100 mb-6 sm:mb-8">
                         {tabs.map((tab) => (
                           <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`pb-4 text-lg font-bold border-b-2 transition-colors relative ${currentTab === tab.id
+                            className={`pb-3 sm:pb-4 text-base sm:text-lg font-bold border-b-2 transition-colors relative whitespace-nowrap ${currentTab === tab.id
                               ? 'text-orange-500 border-orange-500'
                               : 'text-gray-400 border-transparent hover:text-gray-600'
                               }`}
@@ -682,7 +686,7 @@ export default function ProductDetail({ params }) {
                         ))}
                       </div>
 
-                      <div className="prose prose-stone max-w-none">
+                      <div className="prose prose-stone max-w-none prose-sm sm:prose-base">
                         {(() => {
                           const tab = tabs.find(t => t.id === currentTab);
                           if (!tab) return null;

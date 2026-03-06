@@ -12,10 +12,10 @@ export default function HeroSection({ offers }) {
     const sliderOffers = activeOffers.slice(2);
 
     return (
-        <section className="w-full py-6 lg:py-12 bg-gray-200">
-            <div className="max-w-7xl mx-auto px-4 lg:px-0 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="w-full py-3 lg:py-12 bg-gray-200">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-0 grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-6">
                 {/* Left: Stacked Pinned Offers (Takes 1 column on desktop) */}
-                <div className="lg:col-span-1 order-2 lg:order-1 flex flex-row lg:flex-col gap-4 lg:gap-6 h-full">
+                <div className="lg:col-span-1 order-2 lg:order-1 flex flex-row lg:flex-col gap-3 lg:gap-6 h-full">
                     {pinnedOffers.map((offer) => (
                         <div key={offer.id} className="flex-1">
                             <PinnedOffer offer={offer} />
@@ -33,7 +33,7 @@ export default function HeroSection({ offers }) {
                         <HeroSlider offers={sliderOffers} />
                     ) : (
                         // If no slider offers, maybe expand pinned or show placeholder?
-                        <div className="h-full w-full min-h-[350px] lg:min-h-[600px] rounded-2xl flex items-center justify-center text-gray-500 bg-gray-50">
+                        <div className="h-full w-full min-h-[200px] md:min-h-[350px] lg:min-h-[600px] rounded-xl lg:rounded-2xl flex items-center justify-center text-gray-500 bg-gray-50">
                             No more offers
                         </div>
                     )}

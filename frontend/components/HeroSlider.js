@@ -15,7 +15,7 @@ export default function HeroSlider({ offers }) {
     if (!offers || offers.length === 0) return null;
 
     return (
-        <div className="h-full w-full min-h-[350px] md:min-h-[450px] lg:min-h-[600px] rounded-2xl overflow-hidden relative group">
+        <div className="w-full aspect-[4/3] rounded-xl lg:rounded-2xl overflow-hidden relative group">
             <Swiper
                 modules={[Autoplay, Pagination, EffectFade, Navigation]}
                 effect="fade"

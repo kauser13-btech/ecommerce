@@ -7,7 +7,7 @@ import AuthModal from '@/components/AuthModal';
 import CartModal from '@/components/CartModal';
 
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://appleians.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appleians.com'),
   title: {
     template: '%s | Appleians',
     default: "Appleians - Premium Electronics Store",

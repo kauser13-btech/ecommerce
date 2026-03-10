@@ -550,7 +550,15 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                   { id: 'description', label: 'Details', content: product.description },
                   { id: 'specifications', label: 'Specifications', content: product.specifications },
                   { id: 'features', label: 'Features', content: product.features },
-                ].filter(tab => tab.content);
+                ].filter(tab => {
+                  if (!tab.content) return false;
+                  // Handle empty JSON objects like "{}" from the database
+                  if (tab.content.trim() === '{}') return false;
+                  
+                  // Remove empty HTML tags and whitespace to check if there's actual content
+                  const strippedContent = tab.content.replace(/<[^>]*>?/gm, '').trim();
+                  return strippedContent.length > 0 && strippedContent !== '{}';
+                });
 
                 if (tabs.length === 0) return null;
 
@@ -624,9 +632,12 @@ export default function ProductDetailClient({ product, relatedProducts }) {
                         }
 
                         return (
-                          <div className="border p-4 border-gray-200 rounded-xl overflow-hidden">
+                          <div className="border border-gray-100 bg-white rounded-2xl overflow-hidden shadow-sm">
                             <div
-                              className="content-container"
+                              className="p-6 sm:p-8 prose prose-orange max-w-none 
+                                         [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ul]:space-y-1 
+                                         [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:space-y-1 
+                                         [&_li]:marker:text-orange-500 prose-p:leading-relaxed"
                               dangerouslySetInnerHTML={{ __html: tab.content }} />
                           </div>
                         );

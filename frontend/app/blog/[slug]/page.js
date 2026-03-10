@@ -55,7 +55,7 @@ export default async function BlogDetailPage({ params }) {
                     {blog.cover_image && (
                         <div className="absolute inset-0">
                             <img src={blog.cover_image} alt={blog.title} className="w-full h-full object-cover opacity-60" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent" />
+                            <div className="absolute inset-0 bg-linear-to-t from-gray-900 to-transparent" />
                         </div>
                     )}
 

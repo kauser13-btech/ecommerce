@@ -124,10 +124,10 @@ export default function CheckoutPage() {
     return (
         <>
             <Header />
-            <div className="bg-gray-50 pt-28 pb-12">
-                <div className="max-w-7xl mx-auto px-4 mt-8">
+            <div className="bg-gray-50 pt-24 lg:pt-28 pb-8 lg:pb-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4 lg:mt-8">
                     {/* Breadcrumb */}
-                    <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+                    <nav className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 mb-6 lg:mb-8 overflow-x-auto whitespace-nowrap pb-1 custom-scrollbar">
                         <Link href="/" className="hover:text-orange-500 transition-colors flex items-center gap-1">
                             <Home size={16} />
                             <span>Home</span>
@@ -141,9 +141,9 @@ export default function CheckoutPage() {
                         <span className="text-gray-900 font-medium">Checkout</span>
                     </nav>
 
-                    <div className="grid lg:grid-cols-2 gap-12 items-start">
+                    <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start">
                         {/* Left Column - Form */}
-                        <div className="space-y-8 bg-white rounded-3xl p-8 shadow-lg">
+                        <div className="space-y-6 lg:space-y-8 bg-white rounded-2xl lg:rounded-3xl p-5 sm:p-6 lg:p-8 shadow-lg">
 
                             {/* Delivery */}
                             <section>
@@ -178,7 +178,7 @@ export default function CheckoutPage() {
                                         className="w-full p-3 bg-white border border-gray-200 rounded-md outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all placeholder:text-gray-400"
                                     />
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <input
                                             type="text"
                                             name="district"
@@ -344,7 +344,7 @@ export default function CheckoutPage() {
                                                 className="w-full p-3 bg-white border border-gray-200 rounded-md outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all placeholder:text-gray-400"
                                             />
 
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <input
                                                     type="text"
                                                     placeholder="City"
@@ -376,21 +376,21 @@ export default function CheckoutPage() {
                         </div>
 
                         {/* Right Column - Summary */}
-                        <div className="lg:pl-12 sticky top-32">
-                            <div className="bg-white shadow-lg rounded-3xl p-8">
-                                <h2 className="tex-xl font-bold text-gray-900 mb-6 flex items-center justify-between">
+                        <div className="lg:pl-12 sticky top-24 lg:top-32 mt-6 lg:mt-0">
+                            <div className="bg-white shadow-lg rounded-2xl lg:rounded-3xl p-5 sm:p-6 lg:p-8">
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center justify-between">
                                     <span>Order Summary</span>
                                     <span className="text-gray-500 font-normal text-sm">{cartItems.length} items</span>
                                 </h2>
 
-                                <div className="space-y-6 mb-8 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="space-y-4 sm:space-y-6 mb-6 lg:mb-8 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                                     {cartItems.map((item) => (
-                                        <div key={item.id} className="flex gap-4">
-                                            <div className="relative w-16 h-16 bg-white rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 align-middle">
+                                        <div key={item.id} className="flex gap-3 sm:gap-4">
+                                            <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 align-middle">
                                                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
+                                                <h3 className="font-medium text-sm sm:text-base text-gray-900 truncate">{item.name}</h3>
                                                 {item.is_preorder && (
                                                     <div className="mb-1">
                                                         <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">
@@ -420,14 +420,14 @@ export default function CheckoutPage() {
                                     />
                                     {promoCode ? (
                                         <button
-                                            className="bg-red-500 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-red-600 transition-colors"
+                                            className="bg-red-500 text-white font-bold px-4 sm:px-6 py-2.5 rounded-lg hover:bg-red-600 transition-colors w-20 sm:w-auto text-sm sm:text-base shrink-0"
                                             onClick={removePromo}
                                         >
                                             Remove
                                         </button>
                                     ) : (
                                         <button
-                                            className="bg-gray-200 text-gray-500 font-bold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="bg-gray-200 text-gray-500 font-bold px-4 sm:px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-20 sm:w-auto text-sm sm:text-base shrink-0"
                                             onClick={() => applyPromo(couponInput)}
                                             disabled={!couponInput}
                                         >

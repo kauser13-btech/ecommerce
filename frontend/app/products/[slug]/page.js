@@ -83,25 +83,25 @@ export default async function ProductDetailPage({ params }) {
                 "@type": "ListItem",
                 "position": 1,
                 "name": "Home",
-                "item": "https://appleians.com/"
+                "item": "https://www.appleians.com/"
               },
               {
                 "@type": "ListItem",
                 "position": 2,
                 "name": "Products",
-                "item": "https://appleians.com/products"
+                "item": "https://www.appleians.com/products"
               },
               {
                 "@type": "ListItem",
                 "position": 3,
                 "name": product.category?.name || "Category",
-                "item": `https://appleians.com/products?category=${product.category?.slug || ''}`
+                "item": `https://www.appleians.com/products?category=${product.category?.slug || ''}`
               },
               {
                 "@type": "ListItem",
                 "position": 4,
                 "name": product.name,
-                "item": `https://appleians.com/products/${slug}`
+                "item": `https://www.appleians.com/products/${slug}`
               }
             ]
           })
@@ -118,7 +118,7 @@ export default async function ProductDetailPage({ params }) {
             "description": product.short_description || product.name,
             "offers": {
               "@type": "Offer",
-              "url": `https://appleians.com/products/${slug}`,
+              "url": `https://www.appleians.com/products/${slug}`,
               "priceCurrency": "BDT",
               "price": product.sale_price || product.price,
               "itemCondition": "https://schema.org/NewCondition",

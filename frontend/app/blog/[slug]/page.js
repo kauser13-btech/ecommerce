@@ -62,19 +62,19 @@ export default async function BlogDetailPage({ params }) {
                                 "@type": "ListItem",
                                 "position": 1,
                                 "name": "Home",
-                                "item": "https://appleians.com/"
+                                "item": "https://www.appleians.com/"
                             },
                             {
                                 "@type": "ListItem",
                                 "position": 2,
                                 "name": "Blogs",
-                                "item": "https://appleians.com/blogs"
+                                "item": "https://www.appleians.com/blogs"
                             },
                             {
                                 "@type": "ListItem",
                                 "position": 3,
                                 "name": blog.title,
-                                "item": `https://appleians.com/blog/${slug}`
+                                "item": `https://www.appleians.com/blog/${slug}`
                             }
                         ]
                     })

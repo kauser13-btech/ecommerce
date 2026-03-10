@@ -46,7 +46,7 @@ export default async function BlogListingPage({ searchParams }) {
                         "@context": "https://schema.org",
                         "@type": "Blog",
                         "name": "Technical News & Insights | Appleians",
-                        "url": "https://appleians.com/blogs",
+                        "url": "https://www.appleians.com/blogs",
                         "description": "Read the latest technical news, insights, and updates from Appleians."
                     })
                 }}

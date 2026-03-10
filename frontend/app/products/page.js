@@ -125,7 +125,7 @@ export default async function ProductsPage(props) {
             "@context": "https://schema.org",
             "@type": "CollectionPage",
             "name": "All Products | Appleians",
-            "url": "https://appleians.com/products",
+            "url": "https://www.appleians.com/products",
             "description": "Browse our complete catalog of premium electronics, smartphones, and accessories."
           })
         }}

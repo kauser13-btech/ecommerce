@@ -79,7 +79,7 @@ export default async function Home() {
 
       <main className="pt-28">
         <h1 className="sr-only">Appleians - Premium Electronics Store</h1>
-        
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -87,10 +87,10 @@ export default async function Home() {
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "Appleians",
-              "url": "https://appleians.com/",
+              "url": "https://www.appleians.com/",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://appleians.com/products?search={search_term_string}",
+                "target": "https://www.appleians.com/products?search={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })
@@ -103,8 +103,8 @@ export default async function Home() {
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "Appleians",
-              "url": "https://appleians.com/",
-              "logo": "https://appleians.com/logo.png",
+              "url": "https://www.appleians.com/",
+              "logo": "https://www.appleians.com/logo.png",
               "contactPoint": {
                 "@type": "ContactPoint",
                 "telephone": "01842-430000",

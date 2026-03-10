@@ -3,6 +3,14 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductGridWithToolbar from '@/components/ProductGridWithToolbar';
 
+export const metadata = {
+  title: 'All Products',
+  description: 'Browse our complete catalog of premium electronics, smartphones, and accessories.',
+  alternates: {
+    canonical: '/products',
+  },
+};
+
 // Cache indefinitely until revalidated by tag from backend
 
 async function getProducts(searchParams) {
@@ -110,6 +118,18 @@ export default async function ProductsPage(props) {
   return (
     <>
       <Header />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "All Products | Appleians",
+            "url": "https://appleians.com/products",
+            "description": "Browse our complete catalog of premium electronics, smartphones, and accessories."
+          })
+        }}
+      />
 
       <main className="min-h-screen bg-white pt-28">
         {/* Category Hero Section */}
@@ -210,7 +230,7 @@ export default async function ProductsPage(props) {
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="flex gap-12">
             {/* Sidebar Filters */}
-            <aside className="w-64 flex-shrink-0 hidden lg:block">
+            <aside className="w-64 shrink-0 hidden lg:block">
               <div className="sticky top-32 space-y-8">
                 {/* Categories */}
                 <div>

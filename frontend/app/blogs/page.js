@@ -1,9 +1,18 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, User, ArrowRight, Tag } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+    title: 'Technical News & Insights',
+    description: 'Read the latest technical news, insights, and updates from Appleians.',
+    alternates: {
+        canonical: '/blogs',
+    },
+};
 
 async function getBlogs(tag) {
     try {
@@ -30,12 +39,24 @@ export default async function BlogListingPage({ searchParams }) {
     return (
         <div className="bg-white min-h-screen">
             <Header />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Blog",
+                        "name": "Technical News & Insights | Appleians",
+                        "url": "https://appleians.com/blogs",
+                        "description": "Read the latest technical news, insights, and updates from Appleians."
+                    })
+                }}
+            />
 
             <main className="pt-28 pb-20">
                 {/* Header Section */}
                 <section className="bg-gray-50 py-16 mb-12">
                     <div className="container mx-auto px-4 max-w-7xl text-center">
-                        <h3 className="text-xl md:text-3xl font-bold text-gray-900 mb-6">Technical News & Insights</h3>
+                        <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-6">Technical News & Insights</h1>
                         {tag && (
                             <div className="mt-8">
                                 <span className="inline-flex items-center px-4 py-2 rounded-full border border-orange-200 bg-orange-50 text-orange-700 font-medium">
@@ -63,12 +84,15 @@ export default async function BlogListingPage({ searchParams }) {
                             {blogs.map((blog) => (
                                 <article key={blog.id} className="group flex flex-col bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
                                     {/* Image */}
-                                    <Link href={`/blog/${blog.slug}`} className="aspect-[16/10] overflow-hidden bg-gray-100 relative">
+                                    <Link href={`/blog/${blog.slug}`} className="aspect-16/10 overflow-hidden bg-gray-100 relative">
                                         {blog.cover_image ? (
-                                            <img
+                                            <Image
                                                 src={blog.cover_image}
                                                 alt={blog.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                fill
+                                                unoptimized
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-300">

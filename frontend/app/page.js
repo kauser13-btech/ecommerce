@@ -8,6 +8,11 @@ import FeaturedProductGrid from '@/components/FeaturedProductGrid';
 import FeaturesGrid from '@/components/FeaturesGrid';
 import FeaturedBlogs from '@/components/FeaturedBlogs';
 
+export const metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 // Cache indefinitely until revalidated by tag from backend
 
@@ -73,6 +78,44 @@ export default async function Home() {
       <Header />
 
       <main className="pt-28">
+        <h1 className="sr-only">Appleians - Premium Electronics Store</h1>
+        
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Appleians",
+              "url": "https://appleians.com/",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://appleians.com/products?search={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Appleians",
+              "url": "https://appleians.com/",
+              "logo": "https://appleians.com/logo.png",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "01842-430000",
+                "contactType": "customer service",
+                "areaServed": "BD",
+                "availableLanguage": ["English", "Bengali"]
+              }
+            })
+          }}
+        />
+
         <HeroSection offers={offers} />
 
         <FeaturesGrid />

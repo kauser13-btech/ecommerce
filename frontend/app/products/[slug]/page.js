@@ -54,6 +54,9 @@ export async function generateMetadata({ params }) {
     openGraph: {
       images: [product.image],
     },
+    alternates: {
+      canonical: `/products/${slug}`,
+    },
   };
 }
 
@@ -67,5 +70,64 @@ export default async function ProductDetailPage({ params }) {
 
   const relatedProducts = await getRelatedProducts(product.category?.slug);
 
-  return <ProductDetailClient product={product} relatedProducts={relatedProducts} />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://appleians.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Products",
+                "item": "https://appleians.com/products"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": product.category?.name || "Category",
+                "item": `https://appleians.com/products?category=${product.category?.slug || ''}`
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "name": product.name,
+                "item": `https://appleians.com/products/${slug}`
+              }
+            ]
+          })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": product.name,
+            "image": product.image,
+            "description": product.short_description || product.name,
+            "offers": {
+              "@type": "Offer",
+              "url": `https://appleians.com/products/${slug}`,
+              "priceCurrency": "BDT",
+              "price": product.sale_price || product.price,
+              "itemCondition": "https://schema.org/NewCondition",
+              "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+            }
+          })
+        }}
+      />
+      <ProductDetailClient product={product} relatedProducts={relatedProducts} />
+    </>
+  );
 }

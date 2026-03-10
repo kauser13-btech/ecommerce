@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, User, Tag, ArrowLeft, Clock } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
@@ -33,6 +34,9 @@ export async function generateMetadata({ params }) {
             description: blog.excerpt,
             images: blog.cover_image ? [blog.cover_image] : [],
         },
+        alternates: {
+            canonical: `/blog/${slug}`,
+        },
     };
 }
 
@@ -47,6 +51,52 @@ export default async function BlogDetailPage({ params }) {
     return (
         <div className="bg-white min-h-screen">
             <Header />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            {
+                                "@type": "ListItem",
+                                "position": 1,
+                                "name": "Home",
+                                "item": "https://appleians.com/"
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 2,
+                                "name": "Blogs",
+                                "item": "https://appleians.com/blogs"
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 3,
+                                "name": blog.title,
+                                "item": `https://appleians.com/blog/${slug}`
+                            }
+                        ]
+                    })
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Article",
+                        "headline": blog.title,
+                        "image": blog.cover_image ? [blog.cover_image] : [],
+                        "datePublished": blog.created_at,
+                        "dateModified": blog.updated_at || blog.created_at,
+                        "author": [{
+                            "@type": "Person",
+                            "name": blog.author?.name || "Admin"
+                        }]
+                    })
+                }}
+            />
 
             <main className="pt-28 pb-20">
 
@@ -54,7 +104,7 @@ export default async function BlogDetailPage({ params }) {
                 <div className="relative h-[400px] md:h-[500px] w-full bg-gray-900">
                     {blog.cover_image && (
                         <div className="absolute inset-0">
-                            <img src={blog.cover_image} alt={blog.title} className="w-full h-full object-cover opacity-60" />
+                            <Image src={blog.cover_image} alt={blog.title} fill priority unoptimized className="object-cover opacity-60" sizes="100vw" />
                             <div className="absolute inset-0 bg-linear-to-t from-gray-900 to-transparent" />
                         </div>
                     )}

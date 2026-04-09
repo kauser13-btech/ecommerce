@@ -8,9 +8,16 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 use App\Models\Offer;
+use App\Services\CacheInvalidationService;
 
 class OfferController extends Controller
 {
+    protected CacheInvalidationService $cacheService;
+
+    public function __construct(CacheInvalidationService $cacheService)
+    {
+        $this->cacheService = $cacheService;
+    }
     public function index(Request $request)
     {
         $query = Offer::orderBy('sort_order');
@@ -49,6 +56,8 @@ class OfferController extends Controller
 
         $offer = Offer::create($validated);
 
+        $this->cacheService->revalidateTag('offers');
+
         return response()->json($offer, 201);
     }
 
@@ -86,6 +95,8 @@ class OfferController extends Controller
 
         $offer->update($validated);
 
+        $this->cacheService->revalidateTag('offers');
+
         return response()->json($offer);
     }
 
@@ -102,6 +113,8 @@ class OfferController extends Controller
 
         $offer->delete();
 
+        $this->cacheService->revalidateTag('offers');
+
         return response()->json(['message' => 'Offer deleted successfully']);
     }
 
@@ -116,6 +129,8 @@ class OfferController extends Controller
         foreach ($validated['offers'] as $item) {
             Offer::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);
         }
+
+        $this->cacheService->revalidateTag('offers');
 
         return response()->json(['message' => 'Offers reordered successfully']);
     }

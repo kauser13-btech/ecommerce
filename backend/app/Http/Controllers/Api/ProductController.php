@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
+use App\Services\CacheInvalidationService;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,12 @@ use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
+    protected CacheInvalidationService $cacheService;
+
+    public function __construct(CacheInvalidationService $cacheService)
+    {
+        $this->cacheService = $cacheService;
+    }
     public function index(Request $request)
     {
         $query = Product::with(['category', 'brand', 'tags'])->withCount('variants');
@@ -160,6 +167,8 @@ class ProductController extends Controller
         foreach ($request->items as $item) {
             Product::where('id', $item['id'])->update([$column => $item['order']]);
         }
+
+        $this->cacheService->revalidateTags(['products', 'featured-products', 'new-arrivals']);
 
         return response()->json(['message' => 'Order updated successfully']);
     }
@@ -342,6 +351,8 @@ class ProductController extends Controller
                     }
                 }
 
+                $this->cacheService->revalidateTags(['products', 'featured-products', 'new-arrivals']);
+
                 return response()->json([
                     'message' => 'Product created successfully',
                     'data' => $product
@@ -502,6 +513,8 @@ class ProductController extends Controller
                      }
                 }
 
+                $this->cacheService->revalidateTags(['products', 'featured-products', 'new-arrivals']);
+
                 return response()->json([
                     'message' => 'Product updated successfully',
                     'data' => $product
@@ -531,6 +544,8 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->delete();
+
+        $this->cacheService->revalidateTags(['products', 'featured-products', 'new-arrivals']);
 
         return response()->json(['message' => 'Product deleted successfully']);
     }

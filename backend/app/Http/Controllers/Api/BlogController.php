@@ -4,11 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
+use App\Services\CacheInvalidationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class BlogController extends Controller
 {
+    protected CacheInvalidationService $cacheService;
+
+    public function __construct(CacheInvalidationService $cacheService)
+    {
+        $this->cacheService = $cacheService;
+    }
     // Public Endpoints
 
     public function indexPublic(Request $request)
@@ -84,6 +91,8 @@ class BlogController extends Controller
 
         $blog = Blog::create($validated);
 
+        $this->cacheService->revalidateTags(['blogs', 'featured-blogs']);
+
         return response()->json($blog, 201);
     }
 
@@ -114,6 +123,8 @@ class BlogController extends Controller
 
         $blog->update($validated);
 
+        $this->cacheService->revalidateTags(['blogs', 'featured-blogs']);
+
         return response()->json($blog);
     }
 
@@ -121,6 +132,9 @@ class BlogController extends Controller
     {
         $blog = Blog::findOrFail($id);
         $blog->delete();
+
+        $this->cacheService->revalidateTags(['blogs', 'featured-blogs']);
+
         return response()->json(['message' => 'Blog deleted successfully']);
     }
 
